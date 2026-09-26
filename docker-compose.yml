@@ -1,0 +1,22 @@
+# Just run:  docker compose up -d --build
+#
+# No --env-file flag needed — "docker compose" auto-loads a file
+# literally named ".env" in this folder for the ${...} substitution
+# in args: below, and env_file: points the same file into the
+# container's runtime environment too. (.env.local is the separate
+# file Next.js itself reads for `npm run dev` outside Docker — same
+# values, different consumer.)
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
+        NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+    env_file:
+      - .env
+    ports:
+      - "3000:3000"
+    restart: unless-stopped

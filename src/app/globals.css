@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/*
+ * Every color the app uses resolves to one of these variables (wired
+ * up in tailwind.config.ts). Switching from light to dark is just the
+ * .dark block below taking over — no component needs its own dark:
+ * classes for these.
+ *
+ * Deliberately NOT re-themed here: each category's own color (stored
+ * per-category in Supabase — color_bg/color_fg/color_dot) and the
+ * DonutChart segment colors. Those are small accent chips/dots/icon
+ * tiles, not full-page surfaces, and keeping them constant across
+ * themes is a common, intentional pattern for tag/label systems —
+ * your "Loans" indigo stays the same indigo whether you're in light
+ * or dark mode, rather than needing its own dark-mode variant.
+ */
+:root {
+  --color-bg: #EFEFFB;
+  --color-card: #FFFFFF;
+  --color-ink: #1A1A2E;
+  --color-muted: #8A8AA3;
+  --color-primary: #3A4EF0;
+  --color-primary-dark: #2A3BCB;
+  --color-border: #F0F0F6;
+  --color-surface: #F2F2FA;
+  --color-surface-strong: #E4E4F2;
+  --color-track: #E9E9EB;
+  --color-accent-soft: #EEF0FF;
+  --color-good-bg: #D9F7E6;
+  --color-good-fg: #12854A;
+  --color-bad-bg: #FEE2E6;
+  --color-bad-fg: #B3123A;
+}
+
+.dark {
+  --color-bg: #0F1117;
+  --color-card: #191B24;
+  --color-ink: #F1F1F6;
+  --color-muted: #9497AA;
+  --color-primary: #5A6BFF;
+  --color-primary-dark: #4653D9;
+  --color-border: #2A2D3A;
+  --color-surface: #20222D;
+  --color-surface-strong: #2C2F3D;
+  --color-track: #262835;
+  --color-accent-soft: #262A45;
+  --color-good-bg: #113325;
+  --color-good-fg: #4ADE80;
+  --color-bad-bg: #3B0F16;
+  --color-bad-fg: #FB7185;
+}
+
+@layer base {
+  html {
+    -webkit-tap-highlight-color: transparent;
+  }
+  body {
+    @apply bg-bg text-ink;
+  }
+  /* Tap feedback on every button/link, app-wide, in one place — no
+     component needs its own active: classes for this baseline effect
+     (a component can still layer on a stronger one, as the transaction
+     edit page already does). Respects prefers-reduced-motion. */
+  button, a {
+    transition: transform 120ms ease;
+  }
+  button:active, a:active {
+    transform: scale(0.96);
+  }
+  @media (prefers-reduced-motion: reduce) {
+    button, a {
+      transition: none;
+    }
+    button:active, a:active {
+      transform: none;
+    }
+  }
+}
