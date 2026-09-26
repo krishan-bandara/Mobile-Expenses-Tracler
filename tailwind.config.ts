@@ -26,7 +26,7 @@ const config: Config = {
         bad: { bg: "var(--color-bad-bg)", fg: "var(--color-bad-fg)" }
       },
       fontFamily: {
-        sans: ["'Plus Jakarta Sans'", "system-ui", "sans-serif"]
+        sans: ["var(--font-plus-jakarta-sans)", "system-ui", "sans-serif"]
       },
       borderRadius: {
         xl2: "22px",
