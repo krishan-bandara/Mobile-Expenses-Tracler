@@ -22,6 +22,21 @@ import type { Category, Transaction } from "@/lib/types";
  * narrows further within that month. Categories are multi-select, and
  * a total for whatever's currently showing sits below the list.
  */
+/**
+ * Defensive: keeps only the first occurrence of each transaction id.
+ * Verified against the real data that this app currently has no actual
+ * duplicate rows, but this guards against it regardless of cause —
+ * a duplicated id would otherwise double-count in the total below.
+ */
+function dedupeById(rows: Transaction[]): Transaction[] {
+  const seen = new Set<string>();
+  return rows.filter((r) => {
+    if (seen.has(r.id)) return false;
+    seen.add(r.id);
+    return true;
+  });
+}
+
 export default function TransactionsPage() {
   const router = useRouter();
   const supabase = createClient();
@@ -52,7 +67,7 @@ export default function TransactionsPage() {
           .order("created_at", { ascending: false }),
         supabase.from("categories").select("*")
       ]);
-      setTransactions((txns ?? []) as Transaction[]);
+      setTransactions(dedupeById((txns ?? []) as Transaction[]));
       setCategories((cats ?? []) as Category[]);
       setLoading(false);
     })();
@@ -244,9 +259,9 @@ export default function TransactionsPage() {
           <p className="text-sm text-muted py-10 text-center">Nothing matches those filters.</p>
         ) : (
           groups.map((group) => (
-            <div key={group.date} className="mb-3">
+            <div key={group.date} className="mb-3 isolate">
               <div className="text-xs font-semibold text-muted px-1 pb-1.5">{group.label}</div>
-              <div className="bg-card rounded-xl2 px-3.5">
+              <div className="bg-card rounded-xl2 px-3.5 overflow-hidden">
                 {group.rows.map((txn) => (
                   <TransactionRow key={txn.id} txn={txn} category={categoryById.get(txn.category_id ?? "") ?? null} />
                 ))}
