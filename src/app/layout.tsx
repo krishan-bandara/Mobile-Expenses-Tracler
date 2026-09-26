@@ -1,25 +1,29 @@
 import type { Metadata, Viewport } from "next";
-import { Plus_Jakarta_Sans } from "next/font/google";
 import Script from "next/script";
+import "@fontsource/plus-jakarta-sans/400.css";
+import "@fontsource/plus-jakarta-sans/500.css";
+import "@fontsource/plus-jakarta-sans/600.css";
+import "@fontsource/plus-jakarta-sans/700.css";
+import "@fontsource/plus-jakarta-sans/800.css";
 import "./globals.css";
 import { themeInitScript } from "@/lib/theme";
 
-// next/font self-hosts the font at build time — no external stylesheet
-// request, and (more importantly here) no manual <head> element needed
-// just to load it. A hand-authored <head> in the App Router's root
-// layout is the actual bug that was breaking mobile rendering: Next
-// manages <head> itself via the metadata/viewport exports below, and a
-// second, manually-written <head> alongside that can cause those
+// Self-hosted as a plain npm package (resolved via the npm registry,
+// which already works fine in every environment this has been built
+// in) rather than next/font/google, which needs to reach
+// fonts.googleapis.com *during the Docker build* to fetch the font —
+// that specific host turned out to be unreachable from the VM's build
+// environment even though npm install itself worked fine moments
+// earlier. This has zero network dependency at build time, on any
+// machine, ever: the font files ship inside the npm package itself.
+//
+// Unrelated to the above, but worth repeating: no manual <head>
+// element here either way. A hand-authored <head> in the App
+// Router's root layout is what broke mobile rendering earlier — Next
+// manages <head> itself via the metadata/viewport exports below, and
+// a second, manually-written <head> alongside that can cause those
 // auto-generated tags — including the viewport meta tag — to be
-// dropped or duplicated. Without a working viewport tag, mobile
-// browsers fall back to a wide desktop-style virtual viewport and
-// zoom the whole page out to fit, which is exactly the "content
-// squeezed into a narrow island with huge margins" symptom.
-const plusJakartaSans = Plus_Jakarta_Sans({
-  subsets: ["latin"],
-  weight: ["400", "500", "600", "700", "800"],
-  variable: "--font-plus-jakarta-sans"
-});
+// dropped or duplicated.
 
 export const metadata: Metadata = {
   title: "Expense Tracker",
@@ -44,7 +48,7 @@ export const viewport: Viewport = {
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={plusJakartaSans.variable}>
+    <html lang="en">
       <body className="font-sans antialiased">
         {/* Runs before paint so a saved dark-mode preference never
             flashes light first. next/script's beforeInteractive

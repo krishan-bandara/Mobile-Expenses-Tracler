@@ -70,10 +70,10 @@ Visit `http://localhost:3000` and create an account (email + password).
 ### 4. Run with Docker
 
 ```bash
-docker compose up -d --build
+docker compose --env-file /path/to/your/.env up -d --build
 ```
 
-Docker builds and serves the app on `http://localhost:3000`; it does not host Supabase — the app connects to your cloud project.
+Point `--env-file` at wherever you keep your env file — this repo's `docker-compose.yml` is currently set to `/home/threedkn/_work/_allenvs/.env_mobile`, matching how it's deployed on the VM this runs on. Update both if that path ever changes. Docker builds and serves the app on `http://localhost:3000`; it does not host Supabase — the app connects to your cloud project.
 
 ### Install as a mobile app
 

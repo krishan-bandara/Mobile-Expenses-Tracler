@@ -1,11 +1,17 @@
-# Just run:  docker compose up -d --build
+# Run with:
+#   docker compose --env-file /home/threedkn/_work/_allenvs/.env_mobile up -d --build
 #
-# No --env-file flag needed — "docker compose" auto-loads a file
-# literally named ".env" in this folder for the ${...} substitution
-# in args: below, and env_file: points the same file into the
-# container's runtime environment too. (.env.local is the separate
-# file Next.js itself reads for `npm run dev` outside Docker — same
-# values, different consumer.)
+# The env file lives outside this project folder now, in the VM's
+# shared envs directory. The --env-file flag is required here (unlike
+# the earlier setup, which relied on Compose auto-loading a local
+# ".env") because Compose only auto-loads a file literally named
+# ".env" *in this directory* for the ${...} substitution in args:
+# below — a file at another path has to be pointed to explicitly.
+# env_file: below also points at the same absolute path, so the
+# container's runtime environment gets the same values.
+#
+# (.env.local in this project folder is unrelated — that's what
+# `npm run dev` reads for local, non-Docker development.)
 services:
   web:
     build:
@@ -16,7 +22,7 @@ services:
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
     env_file:
-      - .env
+      - /home/threedkn/_work/_allenvs/.env_mobile
     ports:
       - "3000:3000"
     restart: unless-stopped
