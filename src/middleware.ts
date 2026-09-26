@@ -31,13 +31,26 @@ export async function middleware(request: NextRequest) {
   );
 
   const {
-    data: { user }
+    data: { user },
+    error
   } = await supabase.auth.getUser();
+
+  // A stale refresh-token cookie (left over from an account that was
+  // just deleted, or whose email just changed via the dashboard) makes
+  // getUser() come back with an AuthApiError rather than throwing —
+  // but it also leaves that same dead cookie sitting in the browser,
+  // which would otherwise get resent and fail the same way on every
+  // single request. signOut() here clears it properly through the
+  // same cookie adapter set up above, instead of the error just
+  // repeating in the logs forever until it's cleared by hand.
+  if (error) {
+    await supabase.auth.signOut();
+  }
 
   const publicPaths = ["/login", "/auth"];
   const isPublic = publicPaths.some((p) => request.nextUrl.pathname.startsWith(p));
 
-  if (!user && !isPublic) {
+  if ((!user || error) && !isPublic) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
     return NextResponse.redirect(url);
