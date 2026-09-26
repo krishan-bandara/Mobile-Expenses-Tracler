@@ -54,7 +54,6 @@ export default function SettingsPage() {
     const salt = randomSalt();
     const hash = await hashPin(pin, salt);
     await supabase.from("profiles").update({ pin_hash: hash, pin_salt: salt }).eq("id", userId);
-    localStorage.setItem("expense-tracker:pin-enabled", "1");
     setSettingPin(false);
     setFirstPin(null);
     setPinError(undefined);
@@ -77,7 +76,6 @@ export default function SettingsPage() {
       return;
     }
     await supabase.from("profiles").update({ pin_hash: null, pin_salt: null, biometric_enabled: false }).eq("id", userId);
-    localStorage.setItem("expense-tracker:pin-enabled", "0");
     setProfile((p) => (p ? { ...p, pin_hash: null, biometric_enabled: false } : p));
   }
 

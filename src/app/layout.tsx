@@ -58,7 +58,17 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         <Script id="theme-init" strategy="beforeInteractive">
           {themeInitScript}
         </Script>
-        <div className="max-w-[430px] mx-auto min-h-screen flex flex-col bg-bg">{children}</div>
+        {/* Full-width edge-to-edge on an actual phone (this is a
+            mobile-first app, and phone-width layouts — the keypad,
+            the bottom nav — are deliberately fixed-feeling by design).
+            On anything wider, it reads instead as an app window
+            centered on its own background, rather than a narrow
+            column stranded in a sea of empty space. */}
+        <div className="min-h-screen bg-bg flex justify-center">
+          <div className="w-full sm:max-w-[480px] sm:my-8 sm:rounded-3xl sm:shadow-xl sm:border sm:border-border sm:overflow-hidden min-h-screen sm:min-h-0 flex flex-col bg-bg">
+            {children}
+          </div>
+        </div>
         <ServiceWorkerRegister />
       </body>
     </html>

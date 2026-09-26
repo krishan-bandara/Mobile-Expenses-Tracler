@@ -65,7 +65,8 @@ export default function LoginPage() {
 
   return (
     <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center">
-      <h1 className="text-2xl font-extrabold">Expense Tracker</h1>
+      <LoginIllustration />
+      <h1 className="text-2xl font-extrabold mt-6">Expense Tracker</h1>
       <p className="text-sm text-muted mt-2 mb-8">
         {mode === "signin" ? "Sign in with your email and password." : "Create your account."}
       </p>
@@ -112,5 +113,37 @@ export default function LoginPage() {
         </button>
       </form>
     </div>
+  );
+}
+
+/**
+ * A small custom illustration — a tilted card, a spending trend line,
+ * and a couple of coin accents — built as plain SVG rather than a
+ * fetched image, using the same category-color palette as the rest of
+ * the app so it feels like part of it rather than stock art.
+ */
+function LoginIllustration() {
+  return (
+    <svg width="168" height="132" viewBox="0 0 168 132" role="img" aria-label="">
+      <title>Expense Tracker illustration</title>
+      <circle cx="34" cy="26" r="12" fill="#FCD34D" opacity="0.9" />
+      <circle cx="146" cy="100" r="9" fill="#5EEAD4" opacity="0.9" />
+      <circle cx="152" cy="30" r="6" fill="#FB7BA2" opacity="0.9" />
+      <g transform="rotate(-8 84 66)">
+        <rect x="24" y="38" width="120" height="76" rx="16" fill="var(--color-card)" stroke="var(--color-border)" />
+        <rect x="24" y="38" width="120" height="24" rx="16" fill="var(--color-primary)" />
+        <circle cx="42" cy="50" r="6" fill="#FFFFFF" opacity="0.85" />
+        <rect x="56" y="46" width="36" height="8" rx="4" fill="#FFFFFF" opacity="0.6" />
+        <path
+          d="M40 96 L62 80 L80 90 L104 68 L124 78"
+          fill="none"
+          stroke="var(--color-primary)"
+          strokeWidth="4"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+        <circle cx="124" cy="78" r="4.5" fill="var(--color-primary)" />
+      </g>
+    </svg>
   );
 }

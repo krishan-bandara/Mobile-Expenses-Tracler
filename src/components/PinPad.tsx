@@ -44,7 +44,7 @@ export function PinPad({
         ))}
       </div>
       {error && <p className="text-sm text-bad-fg -mt-4">{error}</p>}
-      <div className="grid grid-cols-3 gap-3 w-full max-w-[280px]">
+      <div className="grid grid-cols-3 gap-x-5 gap-y-5 w-full max-w-[280px]">
         {["1", "2", "3", "4", "5", "6", "7", "8", "9", "", "0", "back"].map((key, i) =>
           key === "" ? (
             <span key={i} />

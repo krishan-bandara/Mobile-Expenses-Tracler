@@ -7,32 +7,49 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, Search, Receipt } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, Receipt, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TransactionRow } from "@/components/TransactionRow";
 import { LockCheck } from "@/components/LockCheck";
 import { SkeletonList } from "@/components/Skeleton";
+import { formatCurrency, monthStartISO } from "@/lib/utils";
 import type { Category, Transaction } from "@/lib/types";
 
 /**
- * Every transaction, newest first — the page Home's "View all" always
- * should have pointed to. Home only ever shows its 5 most recent as a
- * preview; this is where the rest actually live.
+ * Every transaction, month by month — loads the current month by
+ * default rather than your entire history at once, with prev/next
+ * navigation and a jump-to-month picker. An optional exact date
+ * narrows further within that month. Categories are multi-select, and
+ * a total for whatever's currently showing sits below the list.
  */
 export default function TransactionsPage() {
   const router = useRouter();
   const supabase = createClient();
 
+  const [monthCursor, setMonthCursor] = useState(() => new Date());
+  const [exactDate, setExactDate] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [query, setQuery] = useState("");
-  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [categoryFilter, setCategoryFilter] = useState<string[]>([]);
+  const [showCategoryPicker, setShowCategoryPicker] = useState(false);
+
+  const monthStart = monthStartISO(monthCursor);
+  const nextMonthStart = monthStartISO(new Date(monthCursor.getFullYear(), monthCursor.getMonth() + 1, 1));
+  const monthLabel = monthCursor.toLocaleDateString("en-GB", { month: "long", year: "numeric" });
 
   useEffect(() => {
+    setLoading(true);
     (async () => {
       const [{ data: txns }, { data: cats }] = await Promise.all([
-        supabase.from("transactions").select("*").order("txn_date", { ascending: false }).order("created_at", { ascending: false }),
+        supabase
+          .from("transactions")
+          .select("*")
+          .gte("txn_date", monthStart)
+          .lt("txn_date", nextMonthStart)
+          .order("txn_date", { ascending: false })
+          .order("created_at", { ascending: false }),
         supabase.from("categories").select("*")
       ]);
       setTransactions((txns ?? []) as Transaction[]);
@@ -40,18 +57,24 @@ export default function TransactionsPage() {
       setLoading(false);
     })();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [monthStart, nextMonthStart]);
 
   const categoryById = new Map(categories.map((c) => [c.id, c]));
 
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((t) => {
-      if (categoryFilter !== "all" && t.category_id !== categoryFilter) return false;
+      if (exactDate && t.txn_date !== exactDate) return false;
+      if (categoryFilter.length > 0 && !categoryFilter.includes(t.category_id ?? "")) return false;
       if (!q) return true;
       return (t.merchant ?? "").toLowerCase().includes(q) || (t.note ?? "").toLowerCase().includes(q);
     });
-  }, [transactions, query, categoryFilter]);
+  }, [transactions, query, categoryFilter, exactDate]);
+
+  // Net total of whatever's currently showing — income adds, expenses
+  // and transfers-out subtract, so this reads the same way the amount
+  // column itself does (+ green for income, − red for everything else).
+  const total = filtered.reduce((sum, t) => sum + (t.is_income ? Number(t.amount) : -Number(t.amount)), 0);
 
   // Group by calendar date so the list reads like a statement rather
   // than one long undifferentiated feed.
@@ -77,6 +100,15 @@ export default function TransactionsPage() {
   const usedCategoryIds = new Set(transactions.map((t) => t.category_id).filter(Boolean) as string[]);
   const filterableCategories = categories.filter((c) => usedCategoryIds.has(c.id));
 
+  function shiftMonth(delta: number) {
+    setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
+    setExactDate("");
+  }
+
+  function toggleCategory(id: string) {
+    setCategoryFilter((ids) => (ids.includes(id) ? ids.filter((x) => x !== id) : [...ids, id]));
+  }
+
   return (
     <>
       <LockCheck />
@@ -92,49 +124,111 @@ export default function TransactionsPage() {
         <h1 className="flex-grow text-[17px] font-bold">All transactions</h1>
       </div>
 
-      {!loading && transactions.length > 0 && (
-        <div className="mx-[18px] mt-3 flex flex-col gap-2">
-          <div className="flex items-center gap-2 bg-card rounded-xl px-3 h-11">
-            <Search size={16} className="text-muted shrink-0" />
-            <input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="Search by shop or note"
-              className="flex-grow min-w-0 bg-transparent outline-none text-[15px]"
-            />
-          </div>
-          {filterableCategories.length > 1 && (
-            <div className="flex gap-2 overflow-x-auto pb-1">
-              <button
-                type="button"
-                onClick={() => setCategoryFilter("all")}
-                className={
-                  "shrink-0 h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap " +
-                  (categoryFilter === "all" ? "bg-primary text-white" : "bg-card text-muted")
-                }
-              >
-                All
-              </button>
-              {filterableCategories.map((c) => (
-                <button
-                  key={c.id}
-                  type="button"
-                  onClick={() => setCategoryFilter(c.id)}
-                  className={
-                    "shrink-0 h-8 px-3 rounded-full text-xs font-semibold whitespace-nowrap " +
-                    (categoryFilter === c.id ? "bg-primary text-white" : "bg-card text-muted")
-                  }
-                >
-                  {c.name}
-                </button>
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+      <div className="mx-[18px] mt-3 flex items-center gap-2 bg-card rounded-xl2 p-2">
+        <button
+          type="button"
+          onClick={() => shiftMonth(-1)}
+          aria-label="Previous month"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-muted"
+        >
+          <ChevronLeft size={18} />
+        </button>
+        <label className="flex-grow relative">
+          <span className="sr-only">Jump to month</span>
+          <input
+            type="month"
+            value={`${monthCursor.getFullYear()}-${String(monthCursor.getMonth() + 1).padStart(2, "0")}`}
+            onChange={(e) => {
+              if (!e.target.value) return;
+              const [y, m] = e.target.value.split("-").map(Number);
+              setMonthCursor(new Date(y, m - 1, 1));
+              setExactDate("");
+            }}
+            className="absolute inset-0 opacity-0 cursor-pointer"
+          />
+          <span className="block text-center text-[15px] font-bold pointer-events-none">{monthLabel}</span>
+        </label>
+        <button
+          type="button"
+          onClick={() => shiftMonth(1)}
+          aria-label="Next month"
+          className="w-9 h-9 rounded-xl flex items-center justify-center shrink-0 text-muted"
+        >
+          <ChevronRight size={18} />
+        </button>
+      </div>
 
-      <div className="flex-grow mx-[18px] mt-3 pb-8">
+      <div className="mx-[18px] mt-2 flex flex-col gap-2">
+        <div className="flex items-center gap-2 bg-card rounded-xl px-3 h-11">
+          <Search size={16} className="text-muted shrink-0" />
+          <input
+            type="text"
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Search by shop or note"
+            className="flex-grow min-w-0 bg-transparent outline-none text-[15px]"
+          />
+        </div>
+
+        <div className="flex items-center gap-2">
+          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
+            <span className="text-xs text-muted shrink-0">A specific day</span>
+            <input
+              type="date"
+              value={exactDate}
+              onChange={(e) => setExactDate(e.target.value)}
+              className="flex-grow min-w-0 bg-transparent outline-none text-[13px]"
+            />
+            {exactDate && (
+              <button type="button" onClick={() => setExactDate("")} aria-label="Clear date filter" className="text-muted shrink-0">
+                <X size={14} />
+              </button>
+            )}
+          </label>
+        </div>
+
+        {filterableCategories.length > 0 && (
+          <div>
+            <button
+              type="button"
+              onClick={() => setShowCategoryPicker((s) => !s)}
+              className="h-9 px-3 rounded-xl bg-card text-xs font-semibold flex items-center gap-1.5"
+            >
+              {categoryFilter.length === 0 ? "All categories" : `${categoryFilter.length} categor${categoryFilter.length === 1 ? "y" : "ies"} selected`}
+              <ChevronRight size={13} className={"transition-transform " + (showCategoryPicker ? "rotate-90" : "")} />
+            </button>
+            {showCategoryPicker && (
+              <div className="flex gap-2 flex-wrap mt-2 bg-card rounded-xl2 p-3">
+                {filterableCategories.map((c) => {
+                  const active = categoryFilter.includes(c.id);
+                  return (
+                    <button
+                      key={c.id}
+                      type="button"
+                      aria-pressed={active}
+                      onClick={() => toggleCategory(c.id)}
+                      className={
+                        "flex items-center gap-1.5 h-8 px-3 rounded-full text-xs font-semibold " +
+                        (active ? "bg-primary text-white" : "bg-surface text-ink")
+                      }
+                    >
+                      <span className="w-2 h-2 rounded-full" style={{ background: c.color_dot }} />
+                      {c.name}
+                    </button>
+                  );
+                })}
+                {categoryFilter.length > 0 && (
+                  <button type="button" onClick={() => setCategoryFilter([])} className="h-8 px-3 rounded-full text-xs font-semibold text-bad-fg">
+                    Clear
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="flex-grow mx-[18px] mt-3">
         {loading ? (
           <div className="bg-card rounded-xl2 px-3.5">
             <SkeletonList />
@@ -144,10 +238,10 @@ export default function TransactionsPage() {
             <span className="w-14 h-14 rounded-full bg-accentSoft flex items-center justify-center">
               <Receipt size={24} className="text-primary" strokeWidth={1.8} />
             </span>
-            <p className="text-sm text-muted">Nothing recorded yet.</p>
+            <p className="text-sm text-muted">Nothing recorded in {monthLabel}.</p>
           </div>
         ) : filtered.length === 0 ? (
-          <p className="text-sm text-muted py-10 text-center">No transactions match that search.</p>
+          <p className="text-sm text-muted py-10 text-center">Nothing matches those filters.</p>
         ) : (
           groups.map((group) => (
             <div key={group.date} className="mb-3">
@@ -161,6 +255,18 @@ export default function TransactionsPage() {
           ))
         )}
       </div>
+
+      {!loading && filtered.length > 0 && (
+        <div className="mx-[18px] mb-8 mt-1 bg-card rounded-xl2 p-4 flex items-center justify-between">
+          <span className="text-sm text-muted">
+            Total {filtered.length === transactions.length ? `for ${monthLabel}` : "for this filter"}
+          </span>
+          <span className={"text-lg font-extrabold " + (total >= 0 ? "text-good-fg" : "text-bad-fg")}>
+            {total >= 0 ? "+" : "−"}
+            {formatCurrency(Math.abs(total))}
+          </span>
+        </div>
+      )}
     </>
   );
 }

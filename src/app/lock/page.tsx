@@ -48,13 +48,11 @@ function LockPageInner() {
 
       if (!p?.pin_hash) {
         // No PIN configured — nothing to unlock. Send them straight in.
-        localStorage.setItem("expense-tracker:pin-enabled", "0");
         markUnlocked();
         router.replace(next);
         return;
       }
 
-      localStorage.setItem("expense-tracker:pin-enabled", "1");
       const supported = (await biometricSupported()) && hasBiometricRegistered() && p.biometric_enabled;
       setCanBiometric(supported);
       setLoading(false);
