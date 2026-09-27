@@ -23,9 +23,9 @@ export function TransactionRow({ txn, category }: { txn: Transaction; category: 
     >
       <span
         className="w-10 h-10 rounded-2xl flex items-center justify-center shrink-0"
-        style={{ background: category?.color_bg || "var(--color-surface)" }}
+        style={{ background: category?.color_dot || "var(--color-muted)" }}
       >
-        <Icon size={20} color={category?.color_fg || "var(--color-muted)"} strokeWidth={1.9} />
+        <Icon size={20} color="#FFFFFF" strokeWidth={1.9} />
       </span>
       <span className="flex-grow min-w-0">
         <span className="block text-[15px] font-semibold truncate">{txn.merchant || "Untitled"}</span>

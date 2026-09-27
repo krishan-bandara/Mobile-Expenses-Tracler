@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { Settings, User, PieChart, Receipt } from "lucide-react";
+import { Settings, PieChart, Receipt, TrendingUp, TrendingDown } from "lucide-react";
 import { createClient } from "@/lib/supabase/server";
 import { BottomNav } from "@/components/BottomNav";
 import { TransactionRow } from "@/components/TransactionRow";
@@ -7,7 +7,7 @@ import { DonutChart } from "@/components/DonutChart";
 import { LockCheck } from "@/components/LockCheck";
 import { ThemeToggle } from "@/components/ThemeToggle";
 import { Greeting } from "@/components/Greeting";
-import { formatCurrency, monthStartISO } from "@/lib/utils";
+import { formatCurrency, monthStartISO, todayISO } from "@/lib/utils";
 import type { Category, Transaction } from "@/lib/types";
 
 export const dynamic = "force-dynamic";
@@ -53,16 +53,21 @@ export default async function HomePage() {
   const income = txns.filter((t) => t.is_income).reduce((s, t) => s + Number(t.amount), 0);
   const totalBudget = (budgets ?? []).reduce((s, b) => s + Number(b.limit_amount), 0);
   const left = totalBudget - spent;
-  const daysLeft = new Date(new Date(nextMonthStart).getTime() - 1).getDate() - new Date().getDate();
+  const now = new Date();
+  const daysLeft = new Date(new Date(nextMonthStart).getTime() - 1).getDate() - now.getDate();
+  const daysElapsed = now.getDate();
 
-  // Real month-over-month change, not the placeholder "+10%" / "-3%"
-  // this used to always show regardless of the actual numbers. null
-  // means "no prior-month data to compare against" — StatCard hides
-  // the badge in that case rather than showing a meaningless 0%.
   const prevTxns = (prevMonthTxns ?? []) as { amount: number; is_income: boolean; source: string }[];
   const prevSpent = prevTxns.filter((t) => !t.is_income && t.source !== "transfer").reduce((s, t) => s + Number(t.amount), 0);
-  const prevIncome = prevTxns.filter((t) => t.is_income).reduce((s, t) => s + Number(t.amount), 0);
-  const incomeDelta = prevIncome > 0 ? Math.round(((income - prevIncome) / prevIncome) * 100) : null;
+
+  // Both derived from the same month's data already fetched above — no
+  // extra query, and no fabricated numbers (a decorative sparkline with
+  // invented values would be exactly the kind of fake data this app
+  // deliberately avoids elsewhere).
+  const today = txns
+    .filter((t) => !t.is_income && t.source !== "transfer" && t.txn_date === todayISO())
+    .reduce((s, t) => s + Number(t.amount), 0);
+  const dailyAvg = daysElapsed > 0 ? spent / daysElapsed : 0;
   const spendDelta = prevSpent > 0 ? Math.round(((spent - prevSpent) / prevSpent) * 100) : null;
 
   const spendByCategory = new Map<string, number>();
@@ -72,12 +77,12 @@ export default async function HomePage() {
   }
   const donutSegments = categoryList
     .filter((c) => !c.is_income && spendByCategory.has(c.id))
+    .sort((a, b) => (spendByCategory.get(b.id) ?? 0) - (spendByCategory.get(a.id) ?? 0))
     .map((c) => ({
       id: c.id,
       label: c.name,
       value: spendByCategory.get(c.id) ?? 0,
-      color: c.color_dot,
-      bg: c.color_bg
+      color: c.color_dot
     }));
 
   const recent = txns.slice(0, 5);
@@ -86,15 +91,12 @@ export default async function HomePage() {
     <>
       <LockCheck />
 
-      <div className="flex items-center gap-3 px-[18px] pt-[18px] pb-1.5">
-        <div className="w-11 h-11 rounded-full bg-accentSoft flex items-center justify-center shrink-0">
-          <User size={22} color="#6D28D9" strokeWidth={1.9} />
-        </div>
+      <div className="flex items-center gap-2 px-[18px] pt-[18px] pb-1.5">
         <div className="flex-grow min-w-0">
           <div className="text-[13px] text-muted">
             <Greeting />
           </div>
-          <div className="text-[17px] font-bold">
+          <div className="text-[19px] font-bold">
             {new Date().toLocaleDateString("en-GB", { month: "long", year: "numeric" })}
           </div>
         </div>
@@ -108,48 +110,63 @@ export default async function HomePage() {
         </Link>
       </div>
 
-      <div className="flex gap-3 px-[18px] pt-3">
-        <StatCard label="Income" value={formatCurrency(income)} higherIsGood delta={incomeDelta} />
-        <StatCard label="Spending" value={formatCurrency(spent)} higherIsGood={false} delta={spendDelta} />
+      <div className="mx-[18px] mt-3.5 rounded-2xl p-[18px] relative overflow-hidden" style={{ background: "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))" }}>
+        <div className="absolute -top-6 -right-6 w-24 h-24 rounded-full bg-white/10" />
+        <div className="flex items-center justify-between">
+          <span className="text-xs text-white/75">This Month</span>
+        </div>
+        <div className="flex items-end justify-between mt-1">
+          <div className="text-[30px] font-extrabold text-white tracking-tight">{formatCurrency(spent)}</div>
+        </div>
+        {spendDelta !== null && (
+          <span className="inline-flex items-center gap-1 mt-1.5 bg-white/15 text-white text-[11px] font-bold rounded-lg px-2 py-1">
+            {spendDelta >= 0 ? <TrendingUp size={11} /> : <TrendingDown size={11} />}
+            {Math.abs(spendDelta)}% {spendDelta >= 0 ? "higher" : "lower"} than last month
+          </span>
+        )}
+        <div className="flex items-center gap-6 mt-3.5 pt-3.5 border-t border-white/20">
+          <div>
+            <span className="block text-[11px] text-white/75">Last Month</span>
+            <span className="block text-sm font-bold text-white mt-0.5">{formatCurrency(prevSpent)}</span>
+          </div>
+          <div>
+            <span className="block text-[11px] text-white/75">Today</span>
+            <span className="block text-sm font-bold text-white mt-0.5">{formatCurrency(today)}</span>
+          </div>
+          <div>
+            <span className="block text-[11px] text-white/75">Daily avg</span>
+            <span className="block text-sm font-bold text-white mt-0.5">{formatCurrency(dailyAvg)}</span>
+          </div>
+        </div>
       </div>
 
       <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="text-[15px] font-bold">Expenses by category</h2>
-          <span className="text-[13px] font-semibold bg-surface rounded-xl px-2.5 py-1.5">
+          <h2 className="text-[15px] font-bold">Spending by Category</h2>
+          <span className="text-xs font-semibold text-muted">
             {left >= 0 ? `${formatCurrency(left)} left` : `${formatCurrency(-left)} over`}
           </span>
         </div>
 
-        <div className="flex items-center justify-center mt-3">
-          {donutSegments.length > 0 ? (
-            <DonutChart
-              segments={donutSegments}
-              centerLabel={new Date().toLocaleDateString("en-GB", { month: "long" })}
-              centerValue={formatCurrency(spent)}
-            />
-          ) : (
-            <div className="h-[176px] flex flex-col items-center justify-center gap-3 text-center px-6">
-              <span className="w-12 h-12 rounded-full bg-accentSoft flex items-center justify-center">
-                <PieChart size={22} className="text-primary" strokeWidth={1.8} />
-              </span>
-              <p className="text-sm text-muted">No expenses yet this month — add one to see the breakdown.</p>
+        {donutSegments.length > 0 ? (
+          <div className="flex items-center gap-3.5 mt-3">
+            <DonutChart segments={donutSegments} size={108} strokeWidth={13} centerLabel="Total" centerValue={formatCurrency(spent)} />
+            <div className="flex-grow min-w-0 flex flex-col gap-2">
+              {donutSegments.map((seg) => (
+                <div key={seg.id} className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full shrink-0" style={{ background: seg.color }} />
+                  <span className="flex-grow text-xs truncate">{seg.label}</span>
+                  <span className="text-xs font-bold">{Math.round((seg.value / (spent || 1)) * 100)}%</span>
+                </div>
+              ))}
             </div>
-          )}
-        </div>
-
-        {donutSegments.length > 0 && (
-          <div className="flex flex-wrap gap-2 mt-3.5">
-            {donutSegments.map((seg) => (
-              <span
-                key={seg.id}
-                className="flex items-center gap-1.5 rounded-xl px-2.5 py-1.5 text-xs font-semibold"
-                style={{ background: seg.bg }}
-              >
-                <span className="w-2 h-2 rounded-full" style={{ background: seg.color }} />
-                {seg.label} {Math.round((seg.value / (spent || 1)) * 100)}%
-              </span>
-            ))}
+          </div>
+        ) : (
+          <div className="h-[108px] flex flex-col items-center justify-center gap-2.5 text-center px-6">
+            <span className="w-11 h-11 rounded-full bg-accentSoft flex items-center justify-center">
+              <PieChart size={20} className="text-primary" strokeWidth={1.8} />
+            </span>
+            <p className="text-xs text-muted">No expenses yet this month — add one to see the breakdown.</p>
           </div>
         )}
 
@@ -159,9 +176,9 @@ export default async function HomePage() {
       </div>
 
       <div className="flex items-center justify-between gap-3 px-5 pt-4 pb-1.5">
-        <h2 className="text-[15px] font-bold">Transactions</h2>
-        <Link href="/transactions" className="text-[13px] font-semibold">
-          View all
+        <h2 className="text-[15px] font-bold">Recent Transactions</h2>
+        <Link href="/transactions" className="text-[13px] font-semibold text-primary">
+          See All
         </Link>
       </div>
 
@@ -187,38 +204,5 @@ export default async function HomePage() {
       <div className="pt-3" />
       <BottomNav />
     </>
-  );
-}
-
-function StatCard({
-  label,
-  value,
-  higherIsGood,
-  delta
-}: {
-  label: string;
-  value: string;
-  higherIsGood: boolean;
-  delta: number | null;
-}) {
-  // Real month-over-month change now, not a fixed "+10%"/"-3%" that
-  // used to show regardless of what actually happened. null means
-  // there's no prior month to compare against yet — no badge in that
-  // case, rather than a fabricated percentage.
-  const isGood = delta !== null && (higherIsGood ? delta >= 0 : delta <= 0);
-  // Built as literal class strings (not template interpolation) so
-  // Tailwind's static scanner can find and generate them.
-  const toneClasses = isGood ? "bg-good-bg text-good-fg" : "bg-bad-bg text-bad-fg";
-  return (
-    <div className="flex-1 min-w-0 bg-card rounded-xl2 p-3.5">
-      {delta !== null && (
-        <div className={`inline-flex items-center gap-1 text-[11px] font-bold rounded-full px-2 py-1 ${toneClasses}`}>
-          {delta > 0 ? "+" : delta < 0 ? "\u2212" : ""}
-          {Math.abs(delta)}% vs last month
-        </div>
-      )}
-      <div className="text-xs text-muted mt-2.5">{label}</div>
-      <div className="text-[19px] font-extrabold tracking-tight mt-0.5">{value}</div>
-    </div>
   );
 }

@@ -10,7 +10,7 @@ import { createClient } from "@/lib/supabase/client";
 import { BottomNav } from "@/components/BottomNav";
 import { LockCheck } from "@/components/LockCheck";
 import { SkeletonList } from "@/components/Skeleton";
-import { PieChart } from "lucide-react";
+import { PieChart, TrendingUp } from "lucide-react";
 import { formatCurrency, localDateISO, localMonthKey } from "@/lib/utils";
 import type { Category, Transaction } from "@/lib/types";
 
@@ -23,7 +23,7 @@ interface MonthTotal {
 export default function TrendsPage() {
   const supabase = createClient();
   const [months, setMonths] = useState<MonthTotal[]>([]);
-  const [categoryTotals, setCategoryTotals] = useState<{ category: Category; total: number }[]>([]);
+  const [categoryTotals, setCategoryTotals] = useState<{ category: Category; total: number; prevTotal: number }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -66,15 +66,19 @@ export default function TrendsPage() {
     );
 
     const currentMonthKey = localMonthKey(now);
+    const prevMonthKey = localMonthKey(new Date(now.getFullYear(), now.getMonth() - 1, 1));
     const byCategory = new Map<string, number>();
+    const byCategoryPrev = new Map<string, number>();
     for (const t of all) {
-      if (t.txn_date.slice(0, 7) !== currentMonthKey || !t.category_id) continue;
-      byCategory.set(t.category_id, (byCategory.get(t.category_id) ?? 0) + Number(t.amount));
+      if (!t.category_id || t.source === "transfer") continue;
+      const key = t.txn_date.slice(0, 7);
+      if (key === currentMonthKey) byCategory.set(t.category_id, (byCategory.get(t.category_id) ?? 0) + Number(t.amount));
+      if (key === prevMonthKey) byCategoryPrev.set(t.category_id, (byCategoryPrev.get(t.category_id) ?? 0) + Number(t.amount));
     }
     setCategoryTotals(
       categoryList
         .filter((c) => byCategory.has(c.id))
-        .map((c) => ({ category: c, total: byCategory.get(c.id) ?? 0 }))
+        .map((c) => ({ category: c, total: byCategory.get(c.id) ?? 0, prevTotal: byCategoryPrev.get(c.id) ?? 0 }))
         .sort((a, b) => b.total - a.total)
     );
 
@@ -87,6 +91,21 @@ export default function TrendsPage() {
   const prevMonthTotal = months[months.length - 2]?.total ?? 0;
   const thisMonthTotal = months[months.length - 1]?.total ?? 0;
   const delta = prevMonthTotal > 0 ? Math.round(((thisMonthTotal - prevMonthTotal) / prevMonthTotal) * 100) : null;
+
+  // Real 6-month stats — nothing here is invented, all derived from the
+  // same `months` totals already fetched above.
+  const monthTotalsOnly = months.map((m) => m.total).filter((t) => t > 0);
+  const avgMonth = monthTotalsOnly.length > 0 ? monthTotalsOnly.reduce((s, t) => s + t, 0) / monthTotalsOnly.length : 0;
+  const highestMonth = monthTotalsOnly.length > 0 ? Math.max(...monthTotalsOnly) : 0;
+  const lowestMonth = monthTotalsOnly.length > 0 ? Math.min(...monthTotalsOnly) : 0;
+
+  // Fastest-growing category: real month-over-month % change, computed
+  // from categoryTotals' prevTotal — only shown when there's an actual
+  // prior-month figure to compare against, never a guessed baseline.
+  const fastestGrowing = categoryTotals
+    .filter((c) => c.prevTotal > 0)
+    .map((c) => ({ ...c, pct: Math.round(((c.total - c.prevTotal) / c.prevTotal) * 100) }))
+    .sort((a, b) => b.pct - a.pct)[0];
 
   function downloadCsv() {
     const rows = [["Category", "Amount"], ...categoryTotals.map((c) => [c.category.name, c.total.toFixed(2)])];
@@ -107,6 +126,23 @@ export default function TrendsPage() {
         <h1 className="text-[26px] font-extrabold tracking-tight">Trends</h1>
       </div>
 
+      {monthTotalsOnly.length > 0 && (
+        <div className="flex gap-2.5 px-[18px] pt-3">
+          <div className="flex-1 bg-card rounded-xl2 p-3">
+            <span className="text-[10px] text-muted">Avg / month</span>
+            <div className="text-[15px] font-extrabold mt-0.5">{formatCurrency(avgMonth)}</div>
+          </div>
+          <div className="flex-1 bg-card rounded-xl2 p-3">
+            <span className="text-[10px] text-muted">Highest</span>
+            <div className="text-[15px] font-extrabold mt-0.5 text-bad-fg">{formatCurrency(highestMonth)}</div>
+          </div>
+          <div className="flex-1 bg-card rounded-xl2 p-3">
+            <span className="text-[10px] text-muted">Lowest</span>
+            <div className="text-[15px] font-extrabold mt-0.5 text-good-fg">{formatCurrency(lowestMonth)}</div>
+          </div>
+        </div>
+      )}
+
       <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
         <div className="flex items-end gap-2 h-[130px]">
           {months.map((m, i) => (
@@ -118,7 +154,7 @@ export default function TrendsPage() {
                 className="w-full rounded-md"
                 style={{
                   height: Math.max((m.total / maxMonth) * 96, 4),
-                  background: i === months.length - 1 ? "#3A4EF0" : "#D6E9FB"
+                  background: i === months.length - 1 ? "var(--color-primary)" : "var(--color-accent-soft)"
                 }}
               />
             </div>
@@ -140,6 +176,39 @@ export default function TrendsPage() {
         </p>
       )}
 
+      {(categoryTotals[0] || fastestGrowing) && (
+        <div className="flex gap-2.5 mx-[18px] mt-3">
+          {categoryTotals[0] && (
+            <div className="flex-1 bg-card rounded-xl2 p-3.5">
+              <span className="text-[11px] text-muted">Biggest category</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: categoryTotals[0].category.color_dot }}>
+                  <PieChart size={12} color="#FFFFFF" strokeWidth={2} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-bold truncate">{categoryTotals[0].category.name}</div>
+                  <div className="text-[11px] text-muted">{Math.round((categoryTotals[0].total / (currentTotal || 1)) * 100)}% of spend</div>
+                </div>
+              </div>
+            </div>
+          )}
+          {fastestGrowing && (
+            <div className="flex-1 bg-card rounded-xl2 p-3.5">
+              <span className="text-[11px] text-muted">Fastest growing</span>
+              <div className="flex items-center gap-2 mt-1.5">
+                <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: fastestGrowing.category.color_dot }}>
+                  <TrendingUp size={12} color="#FFFFFF" strokeWidth={2.2} />
+                </span>
+                <div className="min-w-0">
+                  <div className="text-[13px] font-bold truncate">{fastestGrowing.category.name}</div>
+                  <div className="text-[11px] text-bad-fg font-semibold">+{fastestGrowing.pct}% MoM</div>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+
       <div className="flex items-center justify-between gap-3 px-5 pt-5 pb-1">
         <h2 className="text-[15px] font-bold">Where it went in {currentMonthLabel}</h2>
       </div>
@@ -156,11 +225,18 @@ export default function TrendsPage() {
           </div>
         ) : (
           categoryTotals.map(({ category, total }) => (
-            <div key={category.id} className="flex items-center gap-2.5 h-12 border-t border-border first:border-t-0">
-              <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: category.color_dot }} />
-              <span className="flex-grow text-[15px]">{category.name}</span>
-              <span className="text-sm text-muted w-10 text-right">{Math.round((total / (currentTotal || 1)) * 100)}%</span>
-              <span className="text-[15px] font-bold text-right whitespace-nowrap shrink-0">{formatCurrency(total)}</span>
+            <div key={category.id} className="py-2.5 border-t border-border first:border-t-0">
+              <div className="flex items-center gap-2.5">
+                <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{ background: category.color_dot }} />
+                <span className="flex-grow text-[14px] font-medium">{category.name}</span>
+                <span className="text-[14px] font-bold text-right whitespace-nowrap shrink-0">{formatCurrency(total)}</span>
+              </div>
+              <div className="h-[5px] rounded-full bg-track mt-1.5 ml-5 overflow-hidden">
+                <div
+                  className="h-full rounded-full"
+                  style={{ width: `${Math.round((total / (currentTotal || 1)) * 100)}%`, background: category.color_dot }}
+                />
+              </div>
             </div>
           ))
         )}

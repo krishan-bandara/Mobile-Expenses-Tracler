@@ -29,7 +29,7 @@ export function BottomNav() {
               key={href}
               href={href}
               aria-label={label}
-              className="w-14 h-14 rounded-[22px] bg-primary flex items-center justify-center text-white shrink-0"
+              className="w-14 h-14 rounded-[22px] bg-primary flex items-center justify-center text-white shrink-0 -mt-6 shadow-lg shadow-primary/35"
             >
               <Icon size={26} strokeWidth={2.4} />
             </Link>
