@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronLeft, ChevronRight, Search, Receipt, X, Plus } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, Receipt, X } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TransactionRow } from "@/components/TransactionRow";
 import { LockCheck } from "@/components/LockCheck";
@@ -39,8 +39,8 @@ export default function TransactionsPage() {
   const supabase = createClient();
 
   const [monthCursor, setMonthCursor] = useState(() => new Date());
-  const [datePicker, setDatePicker] = useState("");
-  const [selectedDates, setSelectedDates] = useState<string[]>([]);
+  const [rangeStart, setRangeStart] = useState("");
+  const [rangeEnd, setRangeEnd] = useState("");
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -77,12 +77,13 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((t) => {
-      if (selectedDates.length > 0 && !selectedDates.includes(t.txn_date)) return false;
+      if (rangeStart && t.txn_date < rangeStart) return false;
+      if (rangeEnd && t.txn_date > rangeEnd) return false;
       if (categoryFilter.length > 0 && !categoryFilter.includes(t.category_id ?? "")) return false;
       if (!q) return true;
       return (t.merchant ?? "").toLowerCase().includes(q) || (t.note ?? "").toLowerCase().includes(q);
     });
-  }, [transactions, query, categoryFilter, selectedDates]);
+  }, [transactions, query, categoryFilter, rangeStart, rangeEnd]);
 
   // Shown as two separate figures rather than netted into one — a
   // single "+Rs 12,000" line hides whether that's a big income month
@@ -119,17 +120,8 @@ export default function TransactionsPage() {
 
   function shiftMonth(delta: number) {
     setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
-    setSelectedDates([]);
-  }
-
-  function addSelectedDate() {
-    if (!datePicker) return;
-    setSelectedDates((ds) => (ds.includes(datePicker) ? ds : [...ds, datePicker].sort()));
-    setDatePicker("");
-  }
-
-  function removeSelectedDate(date: string) {
-    setSelectedDates((ds) => ds.filter((d) => d !== date));
+    setRangeStart("");
+    setRangeEnd("");
   }
 
   function toggleCategory(id: string) {
@@ -169,7 +161,8 @@ export default function TransactionsPage() {
               if (!e.target.value) return;
               const [y, m] = e.target.value.split("-").map(Number);
               setMonthCursor(new Date(y, m - 1, 1));
-              setSelectedDates([]);
+              setRangeStart("");
+              setRangeEnd("");
             }}
             className="absolute inset-0 opacity-0 cursor-pointer"
           />
@@ -197,42 +190,48 @@ export default function TransactionsPage() {
           />
         </div>
 
+        {/*
+          A range, not a set of individual days — picking 21/09 and
+          25/09 here means "everything from the 21st through the 25th
+          inclusive", not just those two specific days. That's what
+          "select two dates" actually meant; the earlier add-one-at-a-
+          time chip picker was solving a different problem than the one
+          being asked for.
+        */}
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
-            <span className="text-xs text-muted shrink-0">Add a day</span>
+            <span className="text-xs text-muted shrink-0">From</span>
             <input
               type="date"
-              value={datePicker}
-              onChange={(e) => setDatePicker(e.target.value)}
+              value={rangeStart}
+              onChange={(e) => setRangeStart(e.target.value)}
               className="flex-grow min-w-0 bg-transparent outline-none text-[13px]"
             />
           </label>
-          <button
-            type="button"
-            onClick={addSelectedDate}
-            disabled={!datePicker}
-            aria-label="Add this date to the selection"
-            className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 disabled:opacity-40"
-          >
-            <Plus size={18} />
-          </button>
+          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
+            <span className="text-xs text-muted shrink-0">To</span>
+            <input
+              type="date"
+              value={rangeEnd}
+              onChange={(e) => setRangeEnd(e.target.value)}
+              className="flex-grow min-w-0 bg-transparent outline-none text-[13px]"
+            />
+          </label>
+          {(rangeStart || rangeEnd) && (
+            <button
+              type="button"
+              onClick={() => {
+                setRangeStart("");
+                setRangeEnd("");
+              }}
+              aria-label="Clear date range"
+              className="w-10 h-10 rounded-xl bg-card flex items-center justify-center shrink-0 text-muted"
+            >
+              <X size={16} />
+            </button>
+          )}
         </div>
 
-        {selectedDates.length > 0 && (
-          <div className="flex gap-2 flex-wrap">
-            {selectedDates.map((d) => (
-              <span key={d} className="flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-full bg-primary text-white text-xs font-semibold">
-                {new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
-                <button type="button" onClick={() => removeSelectedDate(d)} aria-label={`Remove ${d}`}>
-                  <X size={13} />
-                </button>
-              </span>
-            ))}
-            <button type="button" onClick={() => setSelectedDates([])} className="h-8 px-3 rounded-full text-xs font-semibold text-bad-fg">
-              Clear dates
-            </button>
-          </div>
-        )}
 
         {filterableCategories.length > 0 && (
           <div>
@@ -308,8 +307,10 @@ export default function TransactionsPage() {
           <span className="text-xs text-muted">
             {filtered.length === transactions.length
               ? `${monthLabel}`
-              : selectedDates.length > 0
-                ? `${selectedDates.length} selected day${selectedDates.length === 1 ? "" : "s"}`
+              : rangeStart || rangeEnd
+                ? rangeStart && rangeEnd
+                  ? `${new Date(rangeStart).toLocaleDateString("en-GB", { day: "numeric", month: "short" })} – ${new Date(rangeEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
+                  : `From ${new Date(rangeStart || rangeEnd).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}`
                 : "This filter"}
           </span>
           <div className="flex items-center justify-between mt-1.5">
