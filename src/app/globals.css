@@ -17,7 +17,7 @@
  * or dark mode, rather than needing its own dark-mode variant.
  */
 :root {
-  --color-bg: #FAFAFC;
+  --color-bg: #ECE5FD;
   --color-card: #FFFFFF;
   --color-ink: #14141F;
   --color-muted: #9496A6;

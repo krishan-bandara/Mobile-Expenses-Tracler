@@ -150,7 +150,7 @@ export default async function HomePage() {
 
         {donutSegments.length > 0 ? (
           <div className="flex items-center gap-3.5 mt-3">
-            <DonutChart segments={donutSegments} size={108} strokeWidth={13} centerLabel="Total" centerValue={formatCurrency(spent)} />
+            <DonutChart segments={donutSegments} size={168} strokeWidth={20} centerLabel="Total" centerValue={formatCurrency(spent)} />
             <div className="flex-grow min-w-0 flex flex-col gap-2">
               {donutSegments.map((seg) => (
                 <div key={seg.id} className="flex items-center gap-1.5">

@@ -90,21 +90,29 @@ export function DonutChart({
             The clear space inside the ring is a circle, not the full
             size x size box — unconstrained text (especially a long
             total like "Rs 223,224.08") was overflowing past the ring
-            and visually crossing the colored arcs. Constrain to a safe
-            width for that inner circle, and shrink the value's font as
-            it gets longer so it still reads as one clean number rather
-            than wrapping awkwardly.
+            and visually crossing the colored arcs. Constraining the
+            width and shrinking the font helped, but a genuinely large
+            total (Rs 234,000.00 and up) still didn't comfortably fit
+            on one line at any reasonable font size. Splitting the "Rs"
+            prefix onto its own line from the number is what actually
+            fixes it at any magnitude, rather than continuing to tune
+            font-size thresholds against a moving target.
           */}
-          <div style={{ width: Math.max((radius - strokeWidth) * 1.7, 70), display: "flex", flexDirection: "column", alignItems: "center" }}>
+          <div style={{ width: Math.max((radius - strokeWidth) * 2.1, 90), display: "flex", flexDirection: "column", alignItems: "center" }}>
             {centerLabel && <span className="text-[13px] text-muted">{centerLabel}</span>}
-            {centerValue && (
-              <span
-                className="font-extrabold tracking-tight mt-0.5 leading-tight"
-                style={{ fontSize: centerValue.length > 13 ? 14 : centerValue.length > 9 ? 17 : 22 }}
-              >
-                {centerValue}
-              </span>
-            )}
+            {centerValue &&
+              (() => {
+                const match = centerValue.match(/^(\D+)\s*(.+)$/);
+                const [prefix, number] = match ? [match[1].trim(), match[2]] : [null, centerValue];
+                return (
+                  <span className="font-bold tracking-tight mt-0.5 leading-tight text-center">
+                    {prefix && <span style={{ fontSize: 18 }} className="block">{prefix}</span>}
+                    <span style={{ fontSize: number.length > 9 ? 17 : 22 }} className="block">
+                      {number}
+                    </span>
+                  </span>
+                );
+              })()}
           </div>
         </div>
       )}

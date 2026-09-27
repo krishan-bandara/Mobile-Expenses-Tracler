@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ChevronLeft, ChevronRight, Search, Receipt, X } from "lucide-react";
+import { ArrowLeft, ChevronLeft, ChevronRight, Search, Receipt, X, Plus } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { TransactionRow } from "@/components/TransactionRow";
 import { LockCheck } from "@/components/LockCheck";
@@ -18,15 +18,12 @@ import type { Category, Transaction } from "@/lib/types";
 /**
  * Every transaction, month by month — loads the current month by
  * default rather than your entire history at once, with prev/next
- * navigation and a jump-to-month picker. An optional exact date
- * narrows further within that month. Categories are multi-select, and
- * a total for whatever's currently showing sits below the list.
- */
-/**
- * Defensive: keeps only the first occurrence of each transaction id.
- * Verified against the real data that this app currently has no actual
- * duplicate rows, but this guards against it regardless of cause —
- * a duplicated id would otherwise double-count in the total below.
+ * navigation and a jump-to-month picker. You can pick any number of
+ * individual dates to total just those together (not just one day or
+ * a whole month), and categories are multi-select. The summary below
+ * shows income and spending as two separate amounts rather than
+ * netting them into one, since that's usually what's actually useful
+ * to see at a glance.
  */
 function dedupeById(rows: Transaction[]): Transaction[] {
   const seen = new Set<string>();
@@ -42,7 +39,8 @@ export default function TransactionsPage() {
   const supabase = createClient();
 
   const [monthCursor, setMonthCursor] = useState(() => new Date());
-  const [exactDate, setExactDate] = useState("");
+  const [datePicker, setDatePicker] = useState("");
+  const [selectedDates, setSelectedDates] = useState<string[]>([]);
   const [transactions, setTransactions] = useState<Transaction[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
@@ -79,17 +77,21 @@ export default function TransactionsPage() {
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     return transactions.filter((t) => {
-      if (exactDate && t.txn_date !== exactDate) return false;
+      if (selectedDates.length > 0 && !selectedDates.includes(t.txn_date)) return false;
       if (categoryFilter.length > 0 && !categoryFilter.includes(t.category_id ?? "")) return false;
       if (!q) return true;
       return (t.merchant ?? "").toLowerCase().includes(q) || (t.note ?? "").toLowerCase().includes(q);
     });
-  }, [transactions, query, categoryFilter, exactDate]);
+  }, [transactions, query, categoryFilter, selectedDates]);
 
-  // Net total of whatever's currently showing — income adds, expenses
-  // and transfers-out subtract, so this reads the same way the amount
-  // column itself does (+ green for income, − red for everything else).
-  const total = filtered.reduce((sum, t) => sum + (t.is_income ? Number(t.amount) : -Number(t.amount)), 0);
+  // Shown as two separate figures rather than netted into one — a
+  // single "+Rs 12,000" line hides whether that's a big income month
+  // or just barely-positive after heavy spending, which is exactly the
+  // distinction that's actually useful at a glance.
+  const incomeTotal = filtered.filter((t) => t.is_income).reduce((s, t) => s + Number(t.amount), 0);
+  const expenseTotal = filtered
+    .filter((t) => !t.is_income && t.source !== "transfer")
+    .reduce((s, t) => s + Number(t.amount), 0);
 
   // Group by calendar date so the list reads like a statement rather
   // than one long undifferentiated feed.
@@ -117,7 +119,17 @@ export default function TransactionsPage() {
 
   function shiftMonth(delta: number) {
     setMonthCursor((d) => new Date(d.getFullYear(), d.getMonth() + delta, 1));
-    setExactDate("");
+    setSelectedDates([]);
+  }
+
+  function addSelectedDate() {
+    if (!datePicker) return;
+    setSelectedDates((ds) => (ds.includes(datePicker) ? ds : [...ds, datePicker].sort()));
+    setDatePicker("");
+  }
+
+  function removeSelectedDate(date: string) {
+    setSelectedDates((ds) => ds.filter((d) => d !== date));
   }
 
   function toggleCategory(id: string) {
@@ -157,7 +169,7 @@ export default function TransactionsPage() {
               if (!e.target.value) return;
               const [y, m] = e.target.value.split("-").map(Number);
               setMonthCursor(new Date(y, m - 1, 1));
-              setExactDate("");
+              setSelectedDates([]);
             }}
             className="absolute inset-0 opacity-0 cursor-pointer"
           />
@@ -187,20 +199,40 @@ export default function TransactionsPage() {
 
         <div className="flex items-center gap-2">
           <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
-            <span className="text-xs text-muted shrink-0">A specific day</span>
+            <span className="text-xs text-muted shrink-0">Add a day</span>
             <input
               type="date"
-              value={exactDate}
-              onChange={(e) => setExactDate(e.target.value)}
+              value={datePicker}
+              onChange={(e) => setDatePicker(e.target.value)}
               className="flex-grow min-w-0 bg-transparent outline-none text-[13px]"
             />
-            {exactDate && (
-              <button type="button" onClick={() => setExactDate("")} aria-label="Clear date filter" className="text-muted shrink-0">
-                <X size={14} />
-              </button>
-            )}
           </label>
+          <button
+            type="button"
+            onClick={addSelectedDate}
+            disabled={!datePicker}
+            aria-label="Add this date to the selection"
+            className="w-10 h-10 rounded-xl bg-primary text-white flex items-center justify-center shrink-0 disabled:opacity-40"
+          >
+            <Plus size={18} />
+          </button>
         </div>
+
+        {selectedDates.length > 0 && (
+          <div className="flex gap-2 flex-wrap">
+            {selectedDates.map((d) => (
+              <span key={d} className="flex items-center gap-1.5 h-8 pl-3 pr-2 rounded-full bg-primary text-white text-xs font-semibold">
+                {new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short" })}
+                <button type="button" onClick={() => removeSelectedDate(d)} aria-label={`Remove ${d}`}>
+                  <X size={13} />
+                </button>
+              </span>
+            ))}
+            <button type="button" onClick={() => setSelectedDates([])} className="h-8 px-3 rounded-full text-xs font-semibold text-bad-fg">
+              Clear dates
+            </button>
+          </div>
+        )}
 
         {filterableCategories.length > 0 && (
           <div>
@@ -272,14 +304,22 @@ export default function TransactionsPage() {
       </div>
 
       {!loading && filtered.length > 0 && (
-        <div className="mx-[18px] mb-8 mt-1 bg-card rounded-xl2 p-4 flex items-center justify-between">
-          <span className="text-sm text-muted">
-            Total {filtered.length === transactions.length ? `for ${monthLabel}` : "for this filter"}
+        <div className="mx-[18px] mb-8 mt-1 bg-card rounded-xl2 p-4">
+          <span className="text-xs text-muted">
+            {filtered.length === transactions.length
+              ? `${monthLabel}`
+              : selectedDates.length > 0
+                ? `${selectedDates.length} selected day${selectedDates.length === 1 ? "" : "s"}`
+                : "This filter"}
           </span>
-          <span className={"text-lg font-extrabold " + (total >= 0 ? "text-good-fg" : "text-bad-fg")}>
-            {total >= 0 ? "+" : "−"}
-            {formatCurrency(Math.abs(total))}
-          </span>
+          <div className="flex items-center justify-between mt-1.5">
+            <span className="text-sm text-muted">Income</span>
+            <span className="text-base font-bold text-good-fg">+{formatCurrency(incomeTotal)}</span>
+          </div>
+          <div className="flex items-center justify-between mt-1">
+            <span className="text-sm text-muted">Spending</span>
+            <span className="text-base font-bold text-bad-fg">−{formatCurrency(expenseTotal)}</span>
+          </div>
         </div>
       )}
     </>
