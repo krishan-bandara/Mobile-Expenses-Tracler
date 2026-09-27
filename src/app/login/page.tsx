@@ -86,9 +86,7 @@ export default function LoginPage() {
         <p className="text-white/80 text-[13px] mt-1.5">Every rupee, tracked and understood.</p>
       </div>
 
-      <div className="flex-grow" />
-
-      <div className="bg-card rounded-t-[28px] px-6 pt-5 pb-6 shadow-[0_-10px_30px_rgba(20,20,31,0.12)]">
+      <div className="flex-grow bg-card rounded-t-[28px] px-6 pt-5 pb-6 shadow-[0_-10px_30px_rgba(20,20,31,0.12)] flex flex-col">
         <h2 className="text-[17px] font-bold">Welcome back</h2>
         <p className="text-[12.5px] text-muted mt-1 mb-[18px]">
           {mode === "signin" ? "Sign in with your email and password." : "Create your account."}
