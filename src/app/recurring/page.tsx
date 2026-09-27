@@ -113,7 +113,7 @@ export default function RecurringPage() {
       </div>
 
       {due.length > 0 && (
-        <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+        <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <h2 className="text-sm font-bold">Due this month</h2>
           <p className="text-xs text-muted mt-1 mb-3">Pick which of these actually happened.</p>
           {due.map((t) => (
@@ -141,7 +141,7 @@ export default function RecurringPage() {
         </div>
       )}
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <h2 className="text-sm font-bold mb-3">New recurring item</h2>
         <div className="flex flex-col gap-2.5">
           <input
@@ -186,7 +186,7 @@ export default function RecurringPage() {
         </div>
       </div>
 
-      <div className="flex-grow mx-[18px] mt-3 bg-card rounded-xl2 px-4 overflow-hidden">
+      <div className="flex-grow mx-[18px] mt-3 bg-card rounded-xl2 px-4 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <h2 className="text-sm font-bold pt-3 pb-1">All recurring items</h2>
         {loading ? (
           <SkeletonList rows={2} />

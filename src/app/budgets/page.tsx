@@ -94,7 +94,7 @@ export default function BudgetsPage() {
         <h1 className="text-[26px] font-extrabold tracking-tight">Budgets</h1>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <p className="text-sm text-muted">Daily allowance for the rest of the month</p>
         <p className="text-[28px] font-extrabold tracking-tight mt-0.5">{formatCurrency(dailyAllowance)}</p>
         <p className="text-sm text-muted mt-1">
@@ -106,7 +106,7 @@ export default function BudgetsPage() {
         <h2 className="text-[15px] font-bold">By category</h2>
       </div>
 
-      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-4 overflow-hidden">
+      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-4 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         {loading ? (
           <SkeletonList />
         ) : (

@@ -7,7 +7,9 @@ export const dynamic = "force-dynamic";
 
 import { useState } from "react";
 import { useRouter } from "next/navigation";
+import { Mail, Lock } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
+import { WALLET_ILLUSTRATION_B64 } from "./illustration";
 
 /**
  * Single-user sign-in with email + password. No email round-trip needed
@@ -15,6 +17,10 @@ import { createClient } from "@/lib/supabase/client";
  * anything, and only if your Supabase project still has "Confirm email"
  * turned on (Authentication -> Sign In / Providers -> Email). Turn that
  * off for a personal single-user app and even that one email disappears.
+ *
+ * Illustration is the user's own uploaded asset — extracted from the
+ * isolated "Object" layer of their PSD (confirmed genuine RGBA
+ * transparency), not a hand-drawn approximation.
  */
 export default function LoginPage() {
   const router = useRouter();
@@ -64,41 +70,67 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-8 text-center">
-      <LoginIllustration />
-      <h1 className="text-2xl font-extrabold mt-6">Expense Tracker</h1>
-      <p className="text-sm text-muted mt-2 mb-8">
-        {mode === "signin" ? "Sign in with your email and password." : "Create your account."}
-      </p>
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: "linear-gradient(160deg, #9B7CFF 0%, #7C5CFC 55%, #6142E8 100%)" }}
+    >
+      <div className="absolute rounded-full bg-white/[0.07]" style={{ top: 30, right: -40, width: 160, height: 160 }} />
+      <div className="absolute rounded-full bg-white/[0.05]" style={{ top: 160, left: -55, width: 120, height: 120 }} />
 
-      <form onSubmit={handleSubmit} className="w-full max-w-xs flex flex-col gap-3">
-        <input
-          type="email"
-          required
-          placeholder="you@example.com"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
-          className="h-12 rounded-2xl bg-card px-4 text-[15px] outline-none"
-        />
-        <input
-          type="password"
-          required
-          minLength={6}
-          placeholder="Password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-          className="h-12 rounded-2xl bg-card px-4 text-[15px] outline-none"
-        />
-        <button
-          type="submit"
-          disabled={loading}
-          className="h-12 rounded-2xl bg-primary text-white font-semibold disabled:opacity-50"
-        >
-          {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
-        </button>
+      <div className="shrink-0 pt-8 flex justify-center relative" style={{ height: 228 }}>
+        <img src={`data:image/png;base64,${WALLET_ILLUSTRATION_B64}`} alt="" style={{ width: 220, height: "auto" }} />
+      </div>
 
-        {notice && <p className="text-sm text-good-fg">{notice}</p>}
-        {error && <p className="text-sm text-bad-fg">{error}</p>}
+      <div className="shrink-0 px-8 pt-2 text-center">
+        <h1 className="text-white font-extrabold text-[21px] tracking-tight">Expense Tracker</h1>
+        <p className="text-white/80 text-[13px] mt-1.5">Every rupee, tracked and understood.</p>
+      </div>
+
+      <div className="flex-grow" />
+
+      <div className="bg-card rounded-t-[28px] px-6 pt-5 pb-6 shadow-[0_-10px_30px_rgba(20,20,31,0.12)]">
+        <h2 className="text-[17px] font-bold">Welcome back</h2>
+        <p className="text-[12.5px] text-muted mt-1 mb-[18px]">
+          {mode === "signin" ? "Sign in with your email and password." : "Create your account."}
+        </p>
+
+        <form onSubmit={handleSubmit} className="flex flex-col gap-2">
+          <label className="flex items-center gap-2.5 h-11 rounded-2xl bg-surface px-3.5">
+            <Mail size={15} className="text-muted shrink-0" strokeWidth={1.8} />
+            <input
+              type="email"
+              required
+              placeholder="you@example.com"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              className="flex-grow min-w-0 bg-transparent outline-none text-[14px]"
+            />
+          </label>
+          <label className="flex items-center gap-2.5 h-11 rounded-2xl bg-surface px-3.5">
+            <Lock size={15} className="text-muted shrink-0" strokeWidth={1.8} />
+            <input
+              type="password"
+              required
+              minLength={6}
+              placeholder="Password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              className="flex-grow min-w-0 bg-transparent outline-none text-[14px]"
+            />
+          </label>
+
+          <button
+            type="submit"
+            disabled={loading}
+            className="h-[46px] rounded-2xl text-white font-bold text-[15px] mt-1 disabled:opacity-50 shadow-[0_8px_18px_rgba(124,92,252,0.3)]"
+            style={{ background: "linear-gradient(135deg, #9B7CFF, #7C5CFC)" }}
+          >
+            {loading ? "Please wait..." : mode === "signin" ? "Sign in" : "Create account"}
+          </button>
+
+          {notice && <p className="text-sm text-good-fg text-center mt-1">{notice}</p>}
+          {error && <p className="text-sm text-bad-fg text-center mt-1">{error}</p>}
+        </form>
 
         <button
           type="button"
@@ -107,43 +139,19 @@ export default function LoginPage() {
             setError(null);
             setNotice(null);
           }}
-          className="text-sm text-muted mt-2"
+          className="w-full text-center text-[12.5px] text-muted mt-3"
         >
-          {mode === "signin" ? "First time here? Create an account" : "Already have an account? Sign in"}
+          {mode === "signin" ? (
+            <>
+              First time here? <span className="text-primary font-bold">Create an account</span>
+            </>
+          ) : (
+            <>
+              Already have an account? <span className="text-primary font-bold">Sign in</span>
+            </>
+          )}
         </button>
-      </form>
+      </div>
     </div>
-  );
-}
-
-/**
- * A small custom illustration — a tilted card, a spending trend line,
- * and a couple of coin accents — built as plain SVG rather than a
- * fetched image, using the same category-color palette as the rest of
- * the app so it feels like part of it rather than stock art.
- */
-function LoginIllustration() {
-  return (
-    <svg width="168" height="132" viewBox="0 0 168 132" role="img" aria-label="">
-      <title>Expense Tracker illustration</title>
-      <circle cx="34" cy="26" r="12" fill="#FCD34D" opacity="0.9" />
-      <circle cx="146" cy="100" r="9" fill="#5EEAD4" opacity="0.9" />
-      <circle cx="152" cy="30" r="6" fill="#FB7BA2" opacity="0.9" />
-      <g transform="rotate(-8 84 66)">
-        <rect x="24" y="38" width="120" height="76" rx="16" fill="var(--color-card)" stroke="var(--color-border)" />
-        <rect x="24" y="38" width="120" height="24" rx="16" fill="var(--color-primary)" />
-        <circle cx="42" cy="50" r="6" fill="#FFFFFF" opacity="0.85" />
-        <rect x="56" y="46" width="36" height="8" rx="4" fill="#FFFFFF" opacity="0.6" />
-        <path
-          d="M40 96 L62 80 L80 90 L104 68 L124 78"
-          fill="none"
-          stroke="var(--color-primary)"
-          strokeWidth="4"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-        <circle cx="124" cy="78" r="4.5" fill="var(--color-primary)" />
-      </g>
-    </svg>
   );
 }

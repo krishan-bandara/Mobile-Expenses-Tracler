@@ -104,7 +104,7 @@ export default async function HomePage() {
         <Link
           href="/settings"
           aria-label="Settings"
-          className="relative w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0"
+          className="relative w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(20,20,31,0.05)]"
         >
           <Settings size={21} strokeWidth={1.8} />
         </Link>
@@ -140,7 +140,7 @@ export default async function HomePage() {
         </div>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <div className="flex items-center justify-between gap-3">
           <h2 className="text-[15px] font-bold">Spending by Category</h2>
           <span className="text-xs font-semibold text-muted">
@@ -182,7 +182,7 @@ export default async function HomePage() {
         </Link>
       </div>
 
-      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-3.5 overflow-hidden">
+      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-3.5 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         {recent.length === 0 ? (
           <div className="flex flex-col items-center gap-3 py-6 text-center">
             <span className="w-12 h-12 rounded-full bg-accentSoft flex items-center justify-center">

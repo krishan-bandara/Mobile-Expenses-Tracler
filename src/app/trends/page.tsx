@@ -128,22 +128,22 @@ export default function TrendsPage() {
 
       {monthTotalsOnly.length > 0 && (
         <div className="flex gap-2.5 px-[18px] pt-3">
-          <div className="flex-1 bg-card rounded-xl2 p-3">
+          <div className="flex-1 bg-card rounded-xl2 p-3 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <span className="text-[10px] text-muted">Avg / month</span>
             <div className="text-[15px] font-extrabold mt-0.5">{formatCurrency(avgMonth)}</div>
           </div>
-          <div className="flex-1 bg-card rounded-xl2 p-3">
+          <div className="flex-1 bg-card rounded-xl2 p-3 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <span className="text-[10px] text-muted">Highest</span>
             <div className="text-[15px] font-extrabold mt-0.5 text-bad-fg">{formatCurrency(highestMonth)}</div>
           </div>
-          <div className="flex-1 bg-card rounded-xl2 p-3">
+          <div className="flex-1 bg-card rounded-xl2 p-3 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <span className="text-[10px] text-muted">Lowest</span>
             <div className="text-[15px] font-extrabold mt-0.5 text-good-fg">{formatCurrency(lowestMonth)}</div>
           </div>
         </div>
       )}
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <div className="flex items-end gap-2 h-[130px]">
           {months.map((m, i) => (
             <div key={m.monthStart} className="flex-grow flex flex-col items-center gap-1.5">
@@ -179,7 +179,7 @@ export default function TrendsPage() {
       {(categoryTotals[0] || fastestGrowing) && (
         <div className="flex gap-2.5 mx-[18px] mt-3">
           {categoryTotals[0] && (
-            <div className="flex-1 bg-card rounded-xl2 p-3.5">
+            <div className="flex-1 bg-card rounded-xl2 p-3.5 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
               <span className="text-[11px] text-muted">Biggest category</span>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: categoryTotals[0].category.color_dot }}>
@@ -193,7 +193,7 @@ export default function TrendsPage() {
             </div>
           )}
           {fastestGrowing && (
-            <div className="flex-1 bg-card rounded-xl2 p-3.5">
+            <div className="flex-1 bg-card rounded-xl2 p-3.5 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
               <span className="text-[11px] text-muted">Fastest growing</span>
               <div className="flex items-center gap-2 mt-1.5">
                 <span className="w-6 h-6 rounded-lg flex items-center justify-center shrink-0" style={{ background: fastestGrowing.category.color_dot }}>
@@ -213,7 +213,7 @@ export default function TrendsPage() {
         <h2 className="text-[15px] font-bold">Where it went in {currentMonthLabel}</h2>
       </div>
 
-      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-4 overflow-hidden">
+      <div className="flex-grow mx-[18px] bg-card rounded-xl2 px-4 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         {loading ? (
           <SkeletonList />
         ) : categoryTotals.length === 0 ? (

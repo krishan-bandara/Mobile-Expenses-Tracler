@@ -27,7 +27,7 @@ export function ThemeToggle() {
   // mismatch between server-rendered markup and the client's actual
   // saved preference.
   if (theme === null) {
-    return <div className="w-11 h-11 rounded-2xl bg-card shrink-0" aria-hidden="true" />;
+    return <div className="w-11 h-11 rounded-2xl bg-card shrink-0 shadow-[0_2px_8px_rgba(20,20,31,0.05)]" aria-hidden="true" />;
   }
 
   return (
@@ -35,7 +35,7 @@ export function ThemeToggle() {
       type="button"
       onClick={toggle}
       aria-label={theme === "dark" ? "Switch to light theme" : "Switch to dark theme"}
-      className="w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0"
+      className="w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(20,20,31,0.05)]"
     >
       {theme === "dark" ? <Sun size={20} strokeWidth={1.8} /> : <Moon size={20} strokeWidth={1.8} />}
     </button>

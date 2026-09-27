@@ -206,7 +206,7 @@ export default function CategoriesPage() {
         <h1 className="flex-grow text-[17px] font-bold">Categories</h1>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <label htmlFor="new-category" className="block text-xs text-muted mb-2">
           Add a category
         </label>
@@ -261,7 +261,7 @@ export default function CategoriesPage() {
         </div>
       </div>
 
-      <div className="flex-grow mx-[18px] mt-3 bg-card rounded-xl2 px-4 overflow-hidden">
+      <div className="flex-grow mx-[18px] mt-3 bg-card rounded-xl2 px-4 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         {loading ? (
           <SkeletonList />
         ) : (

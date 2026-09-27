@@ -14,7 +14,7 @@ export function Keypad({ onKey }: { onKey: (key: string) => void }) {
             type="button"
             aria-label="Delete last digit"
             onClick={() => onKey("back")}
-            className="h-[52px] rounded-2xl bg-surfaceStrong flex items-center justify-center text-ink"
+            className="h-[52px] rounded-2xl bg-surfaceStrong flex items-center justify-center text-ink shadow-[0_2px_6px_rgba(20,20,31,0.05)]"
           >
             <Delete size={22} strokeWidth={1.9} />
           </button>
@@ -23,7 +23,7 @@ export function Keypad({ onKey }: { onKey: (key: string) => void }) {
             key={key}
             type="button"
             onClick={() => onKey(key)}
-            className="h-[52px] rounded-2xl bg-card flex items-center justify-center text-xl font-bold text-ink"
+            className="h-[52px] rounded-2xl bg-card flex items-center justify-center text-xl font-bold text-ink shadow-[0_2px_6px_rgba(20,20,31,0.05)]"
           >
             {key}
           </button>

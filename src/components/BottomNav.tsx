@@ -18,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="flex items-center justify-between gap-1 bg-card rounded-xl3 px-3.5 py-2 mx-4 mb-6"
+      className="flex items-center justify-between gap-1 bg-card rounded-xl3 px-3.5 py-2 mx-4 mb-6 shadow-[0_-2px_14px_rgba(20,20,31,0.05)]"
       aria-label="Primary"
     >
       {items.map(({ href, label, icon: Icon, isCenter }) => {
@@ -29,7 +29,8 @@ export function BottomNav() {
               key={href}
               href={href}
               aria-label={label}
-              className="w-14 h-14 rounded-[22px] bg-primary flex items-center justify-center text-white shrink-0 -mt-6 shadow-lg shadow-primary/35"
+              className="w-14 h-14 rounded-[22px] flex items-center justify-center text-white shrink-0 -mt-6 shadow-[0_8px_16px_rgba(124,92,252,0.35)]"
+              style={{ background: "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))" }}
             >
               <Icon size={26} strokeWidth={2.4} />
             </Link>

@@ -143,7 +143,7 @@ export default function TransactionsPage() {
         <h1 className="flex-grow text-[17px] font-bold">All transactions</h1>
       </div>
 
-      <div className="mx-[18px] mt-3 flex items-center gap-2 bg-card rounded-xl2 p-2">
+      <div className="mx-[18px] mt-3 flex items-center gap-2 bg-card rounded-xl2 p-2 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <button
           type="button"
           onClick={() => shiftMonth(-1)}
@@ -179,7 +179,7 @@ export default function TransactionsPage() {
       </div>
 
       <div className="mx-[18px] mt-2 flex flex-col gap-2">
-        <div className="flex items-center gap-2 bg-card rounded-xl px-3 h-11">
+        <div className="flex items-center gap-2 bg-card rounded-xl px-3 h-11 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <Search size={16} className="text-muted shrink-0" />
           <input
             type="text"
@@ -199,7 +199,7 @@ export default function TransactionsPage() {
           being asked for.
         */}
         <div className="flex items-center gap-2">
-          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
+          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <span className="text-xs text-muted shrink-0">From</span>
             <input
               type="date"
@@ -208,7 +208,7 @@ export default function TransactionsPage() {
               className="flex-grow min-w-0 bg-transparent outline-none text-[13px]"
             />
           </label>
-          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow">
+          <label className="flex items-center gap-2 bg-card rounded-xl px-3 h-10 flex-grow shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <span className="text-xs text-muted shrink-0">To</span>
             <input
               type="date"
@@ -244,7 +244,7 @@ export default function TransactionsPage() {
               <ChevronRight size={13} className={"transition-transform " + (showCategoryPicker ? "rotate-90" : "")} />
             </button>
             {showCategoryPicker && (
-              <div className="flex gap-2 flex-wrap mt-2 bg-card rounded-xl2 p-3">
+              <div className="flex gap-2 flex-wrap mt-2 bg-card rounded-xl2 p-3 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
                 {filterableCategories.map((c) => {
                   const active = categoryFilter.includes(c.id);
                   return (
@@ -276,7 +276,7 @@ export default function TransactionsPage() {
 
       <div className="flex-grow mx-[18px] mt-3">
         {loading ? (
-          <div className="bg-card rounded-xl2 px-3.5">
+          <div className="bg-card rounded-xl2 px-3.5 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <SkeletonList />
           </div>
         ) : transactions.length === 0 ? (
@@ -292,7 +292,7 @@ export default function TransactionsPage() {
           groups.map((group) => (
             <div key={group.date} className="mb-3 isolate">
               <div className="text-xs font-semibold text-muted px-1 pb-1.5">{group.label}</div>
-              <div className="bg-card rounded-xl2 px-3.5 overflow-hidden">
+              <div className="bg-card rounded-xl2 px-3.5 overflow-hidden shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
                 {group.rows.map((txn) => (
                   <TransactionRow key={txn.id} txn={txn} category={categoryById.get(txn.category_id ?? "") ?? null} />
                 ))}
@@ -303,7 +303,7 @@ export default function TransactionsPage() {
       </div>
 
       {!loading && filtered.length > 0 && (
-        <div className="mx-[18px] mb-8 mt-1 bg-card rounded-xl2 p-4">
+        <div className="mx-[18px] mb-8 mt-1 bg-card rounded-xl2 p-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <span className="text-xs text-muted">
             {filtered.length === transactions.length
               ? `${monthLabel}`

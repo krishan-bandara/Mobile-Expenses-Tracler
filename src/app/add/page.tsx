@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CreditCard, Calendar } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Keypad } from "@/components/Keypad";
 import { LockCheck } from "@/components/LockCheck";
@@ -145,7 +145,7 @@ export default function AddExpensePage() {
           type="button"
           onClick={() => router.push("/")}
           aria-label="Back to home"
-          className="w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0"
+          className="w-11 h-11 rounded-2xl bg-card flex items-center justify-center shrink-0 shadow-[0_2px_8px_rgba(20,20,31,0.06)]"
         >
           <ArrowLeft size={20} strokeWidth={2.2} />
         </button>
@@ -154,7 +154,7 @@ export default function AddExpensePage() {
         </h1>
       </div>
 
-      <div className="flex gap-1 mx-[18px] mt-3.5 bg-card rounded-2xl p-1.5">
+      <div className="flex gap-1 mx-[18px] mt-3.5 bg-card rounded-2xl p-1.5 shadow-[0_2px_8px_rgba(20,20,31,0.05)]">
         <button
           type="button"
           aria-pressed={mode === "out"}
@@ -181,7 +181,7 @@ export default function AddExpensePage() {
         </button>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-[18px]">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-[18px] shadow-[0_4px_16px_rgba(20,20,31,0.06)]">
         <label htmlFor="amount-display" className="block text-xs text-muted">
           Amount
         </label>
@@ -193,10 +193,13 @@ export default function AddExpensePage() {
         </div>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_4px_16px_rgba(20,20,31,0.06)]">
         {mode === "transfer" ? (
           <>
             <label className="flex items-center gap-3 h-[58px]">
+              <span className="w-[30px] h-[30px] rounded-[10px] bg-accentSoft flex items-center justify-center shrink-0">
+                <CreditCard size={14} className="text-primary" strokeWidth={1.9} />
+              </span>
               <span className="flex-grow text-sm text-muted">From</span>
               <select
                 value={accountId}
@@ -211,6 +214,9 @@ export default function AddExpensePage() {
               </select>
             </label>
             <label className="flex items-center gap-3 h-[58px] border-t border-border">
+              <span className="w-[30px] h-[30px] rounded-[10px] bg-accentSoft flex items-center justify-center shrink-0">
+                <CreditCard size={14} className="text-primary" strokeWidth={1.9} />
+              </span>
               <span className="flex-grow text-sm text-muted">To</span>
               <select
                 value={toAccountId}
@@ -233,6 +239,9 @@ export default function AddExpensePage() {
           </div>
         ) : (
           <label className="flex items-center gap-3 h-[58px]">
+            <span className="w-[30px] h-[30px] rounded-[10px] bg-good-bg flex items-center justify-center shrink-0">
+              <ShoppingBag size={14} className="text-good-fg" strokeWidth={1.9} />
+            </span>
             <span className="flex-grow text-sm text-muted">Category</span>
             <select
               value={categoryId}
@@ -251,6 +260,9 @@ export default function AddExpensePage() {
         )}
         {mode !== "transfer" && (
           <label className="flex items-center gap-3 h-[58px] border-t border-border">
+            <span className="w-[30px] h-[30px] rounded-[10px] bg-accentSoft flex items-center justify-center shrink-0">
+              <CreditCard size={14} className="text-primary" strokeWidth={1.9} />
+            </span>
             <span className="flex-grow text-sm text-muted">Account</span>
             <select
               value={accountId}
@@ -266,6 +278,9 @@ export default function AddExpensePage() {
           </label>
         )}
         <label className="flex items-center gap-3 h-[58px] border-t border-border">
+          <span className="w-[30px] h-[30px] rounded-[10px] bg-bad-bg flex items-center justify-center shrink-0">
+            <Calendar size={14} className="text-bad-fg" strokeWidth={1.9} />
+          </span>
           <span className="flex-grow text-sm text-muted">Date</span>
           <input
             type="date"
@@ -299,7 +314,8 @@ export default function AddExpensePage() {
           type="button"
           disabled={saving || !Number(amount)}
           onClick={handleSave}
-          className="w-full h-14 rounded-[20px] bg-primary text-white text-base font-bold disabled:opacity-50"
+          className="w-full h-14 rounded-[20px] text-white text-base font-bold disabled:opacity-50 shadow-[0_8px_18px_rgba(124,92,252,0.35)]"
+          style={{ background: "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))" }}
         >
           {saving ? "Saving..." : `${mode === "transfer" ? "Transfer" : "Save"} ${formatCurrency(Number(amount) || 0)}`}
         </button>

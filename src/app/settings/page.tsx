@@ -109,13 +109,13 @@ export default function SettingsPage() {
         <h1 className="text-[26px] font-extrabold tracking-tight">Settings</h1>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <SettingsLink href="/categories" label="Categories" />
         <SettingsLink href="/accounts" label="Accounts" />
         <SettingsLink href="/recurring" label="Recurring items" />
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <div className="flex items-center gap-3 h-14 border-b border-border">
           <Lock size={18} className="text-muted shrink-0" />
           <span className="flex-grow text-[15px]">App lock</span>
@@ -144,7 +144,7 @@ export default function SettingsPage() {
         )}
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <button type="button" onClick={signOut} className="w-full text-left h-14 text-[15px] font-semibold text-bad-fg">
           Sign out
         </button>

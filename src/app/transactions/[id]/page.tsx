@@ -130,7 +130,7 @@ export default function EditTransactionPage() {
           </button>
           <h1 className="flex-grow text-[17px] font-bold">Edit transaction</h1>
         </div>
-        <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 animate-pulse">
+        <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 animate-pulse shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <div className="h-4 w-24 bg-track rounded mb-3" />
           <div className="h-10 bg-track rounded" />
         </div>
@@ -188,7 +188,7 @@ export default function EditTransactionPage() {
         </div>
       )}
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-[18px]">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 p-[18px] shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <label htmlFor="edit-amount" className="block text-xs text-muted">
           Amount
         </label>
@@ -205,7 +205,7 @@ export default function EditTransactionPage() {
         </div>
       </div>
 
-      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+      <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
         <label className="flex items-center gap-3 h-[58px] border-b border-border">
           <span className="flex-grow text-sm text-muted">Category</span>
           <select
@@ -264,7 +264,7 @@ export default function EditTransactionPage() {
           href={receiptUrl}
           target="_blank"
           rel="noreferrer"
-          className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 flex items-center gap-3 active:scale-[0.98] transition-transform"
+          className="mx-[18px] mt-3 bg-card rounded-xl2 p-4 flex items-center gap-3 active:scale-[0.98] transition-transform shadow-[0_2px_10px_rgba(20,20,31,0.04)]"
         >
           <span className="w-10 h-10 rounded-xl bg-accentSoft flex items-center justify-center shrink-0">
             <ImageIcon size={18} strokeWidth={1.9} />

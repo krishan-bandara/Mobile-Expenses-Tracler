@@ -120,7 +120,7 @@ export default function ScanBillPage() {
       />
 
       {!result && !loading && (
-        <div className="mx-[18px] mt-6 flex flex-col items-center gap-5 bg-card rounded-xl2 py-12 px-6 text-center">
+        <div className="mx-[18px] mt-6 flex flex-col items-center gap-5 bg-card rounded-xl2 py-12 px-6 text-center shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <div className="w-16 h-16 rounded-full bg-accentSoft flex items-center justify-center">
             <ScanLine size={28} color="#6D28D9" />
           </div>
@@ -139,7 +139,7 @@ export default function ScanBillPage() {
       )}
 
       {loading && (
-        <div className="mx-[18px] mt-6 flex flex-col items-center gap-3 bg-card rounded-xl2 py-14">
+        <div className="mx-[18px] mt-6 flex flex-col items-center gap-3 bg-card rounded-xl2 py-14 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
           <Sparkles size={24} className="animate-pulse" color="#6D28D9" />
           <p className="text-sm text-muted">Reading the bill...</p>
         </div>
@@ -152,7 +152,7 @@ export default function ScanBillPage() {
               // eslint-disable-next-line @next/next/no-img-element
               <img src={previewUrl} alt="Scanned receipt" className="w-20 h-28 object-cover rounded-xl shrink-0" />
             )}
-            <div className="flex-grow bg-card rounded-xl2 p-3.5">
+            <div className="flex-grow bg-card rounded-xl2 p-3.5 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
               <label className="block text-xs text-muted">Merchant</label>
               <input
                 value={result.merchant}
@@ -170,7 +170,7 @@ export default function ScanBillPage() {
           </div>
 
           <div className="grid grid-cols-2 gap-3 mx-[18px] mt-3">
-            <div className="bg-card rounded-xl2 p-3.5">
+            <div className="bg-card rounded-xl2 p-3.5 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
               <label className="block text-xs text-muted">Total</label>
               <input
                 type="number"
@@ -196,7 +196,7 @@ export default function ScanBillPage() {
             </p>
           )}
 
-          <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+          <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
             <label className="flex items-center gap-3 h-[54px]">
               <span className="flex-grow text-sm text-muted">Category</span>
               <select
@@ -214,7 +214,7 @@ export default function ScanBillPage() {
           </div>
 
           {result.line_items.length > 0 && (
-            <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4">
+            <div className="mx-[18px] mt-3 bg-card rounded-xl2 px-4 shadow-[0_2px_10px_rgba(20,20,31,0.04)]">
               {result.line_items.map((item, i) => (
                 <div key={i} className="flex items-center justify-between gap-3 h-11 border-t border-border first:border-t-0 text-sm">
                   <span>{item.name}</span>
