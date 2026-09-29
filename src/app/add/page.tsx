@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ArrowLeft, ShoppingBag, CreditCard, Calendar } from "lucide-react";
+import { ArrowLeft, ShoppingBag, CreditCard, Calendar, Check } from "lucide-react";
 import { createClient } from "@/lib/supabase/client";
 import { Keypad } from "@/components/Keypad";
 import { LockCheck } from "@/components/LockCheck";
@@ -31,6 +31,7 @@ export default function AddExpensePage() {
   const [note, setNote] = useState("");
   const [date, setDate] = useState(todayISO());
   const [saving, setSaving] = useState(false);
+  const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   function selectMode(next: Mode) {
@@ -85,6 +86,18 @@ export default function AddExpensePage() {
     setSaving(true);
     setError(null);
 
+    // A brief success moment before navigating back — same ~500ms
+    // pattern as the login page's success state, so saving a
+    // transaction actually feels like it registered rather than just
+    // instantly vanishing to Home.
+    function goHomeAfterSuccess() {
+      setSuccess(true);
+      setTimeout(() => {
+        router.push("/");
+        router.refresh();
+      }, 500);
+    }
+
     const payload =
       mode === "transfer"
         ? {
@@ -120,16 +133,14 @@ export default function AddExpensePage() {
       } else {
         await queueTransaction(payload);
       }
-      router.push("/");
-      router.refresh();
+      goHomeAfterSuccess();
     } catch {
       // Fall back to the offline queue on any network/insert error —
       // better to keep the entry than lose it. (Transfers created
       // offline still queue fine — to_account_id rides along with the
       // rest of the payload.)
       await queueTransaction(payload);
-      router.push("/");
-      router.refresh();
+      goHomeAfterSuccess();
     } finally {
       setSaving(false);
       void syncPendingTransactions();
@@ -312,12 +323,21 @@ export default function AddExpensePage() {
       <div className="px-[18px] pt-3.5 pb-6">
         <button
           type="button"
-          disabled={saving || !Number(amount)}
+          disabled={saving || success || !Number(amount)}
           onClick={handleSave}
-          className="w-full h-14 rounded-[20px] text-white text-base font-bold disabled:opacity-50 shadow-[0_8px_18px_rgba(124,92,252,0.35)]"
-          style={{ background: "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))" }}
+          className="w-full h-14 rounded-[20px] text-white text-base font-bold disabled:opacity-90 shadow-[0_8px_18px_rgba(124,92,252,0.35)] flex items-center justify-center gap-2"
+          style={{ background: success ? "#16A34A" : "linear-gradient(135deg, var(--color-primary-light), var(--color-primary))" }}
         >
-          {saving ? "Saving..." : `${mode === "transfer" ? "Transfer" : "Save"} ${formatCurrency(Number(amount) || 0)}`}
+          {success ? (
+            <>
+              <Check size={20} strokeWidth={3} className="animate-success-pop" />
+              <span className="animate-fade-in">{mode === "transfer" ? "Transferred" : "Saved"}</span>
+            </>
+          ) : saving ? (
+            "Saving..."
+          ) : (
+            `${mode === "transfer" ? "Transfer" : "Save"} ${formatCurrency(Number(amount) || 0)}`
+          )}
         </button>
       </div>
     </>

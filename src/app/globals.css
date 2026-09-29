@@ -80,3 +80,44 @@
     }
   }
 }
+
+/*
+ * Shared animation keyframes — used for the login wallet's entrance
+ * and idle float, and for the success checkmark shown after a
+ * successful sign-in or a saved transaction, before navigating away.
+ * Respecting prefers-reduced-motion here too: each animation gets a
+ * reduced-motion override further down that swaps it for an instant
+ * fade instead of movement.
+ */
+@keyframes wallet-in {
+  0% { opacity: 0; transform: scale(0.75) rotate(-8deg); }
+  60% { opacity: 1; transform: scale(1.05) rotate(2deg); }
+  100% { opacity: 1; transform: scale(1) rotate(0deg); }
+}
+@keyframes wallet-float {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-6px); }
+}
+@keyframes success-pop {
+  0% { opacity: 0; transform: scale(0.4); }
+  60% { opacity: 1; transform: scale(1.15); }
+  100% { opacity: 1; transform: scale(1); }
+}
+@keyframes fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+.animate-wallet-in {
+  animation: wallet-in 0.7s cubic-bezier(0.22, 1, 0.36, 1) both, wallet-float 3.2s ease-in-out 0.7s infinite;
+}
+.animate-success-pop {
+  animation: success-pop 0.5s cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+.animate-fade-in {
+  animation: fade-in 0.25s ease both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .animate-wallet-in, .animate-success-pop, .animate-fade-in {
+    animation: fade-in 0.2s ease both;
+  }
+}
