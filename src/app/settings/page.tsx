@@ -151,7 +151,7 @@ export default function SettingsPage() {
       </div>
 
       <div className="flex-grow" />
-      <div className="pt-3" />
+      <div className="pb-24" />
       <BottomNav />
     </>
   );

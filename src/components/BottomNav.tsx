@@ -18,7 +18,7 @@ export function BottomNav() {
 
   return (
     <nav
-      className="flex items-center justify-between gap-1 bg-card rounded-xl3 px-3.5 py-2 mx-4 mb-6 shadow-[0_-2px_14px_rgba(20,20,31,0.05)]"
+      className="fixed inset-x-0 bottom-0 z-10 sm:max-w-[480px] sm:mx-auto flex items-center justify-between gap-1 bg-card rounded-xl3 px-3.5 py-2 mx-4 mb-6 shadow-[0_-2px_14px_rgba(20,20,31,0.05)]"
       aria-label="Primary"
     >
       {items.map(({ href, label, icon: Icon, isCenter }) => {

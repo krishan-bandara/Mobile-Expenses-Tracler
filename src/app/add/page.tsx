@@ -314,7 +314,7 @@ export default function AddExpensePage() {
 
       {error && <p className="text-sm text-bad-fg mx-[18px] mt-3">{error}</p>}
 
-      <div className="flex-grow" />
+      <div className="flex-grow min-h-6" />
 
       <div className="px-[18px]">
         <Keypad onKey={handleKey} />

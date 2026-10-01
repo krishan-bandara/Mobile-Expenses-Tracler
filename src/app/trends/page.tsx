@@ -247,7 +247,7 @@ export default function TrendsPage() {
         )}
       </div>
 
-      <div className="pt-3" />
+      <div className="pb-24" />
       <BottomNav />
     </>
   );

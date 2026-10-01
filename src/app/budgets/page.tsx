@@ -135,7 +135,7 @@ export default function BudgetsPage() {
         )}
       </div>
 
-      <div className="pt-3" />
+      <div className="pb-24" />
       <BottomNav />
     </>
   );
