@@ -50,14 +50,29 @@ export default function ScanBillPage() {
       if (!response.ok) throw new Error(json.error || "Could not read the bill");
       setResult(json.extraction as BillExtraction);
       setReceiptPath(json.receiptPath ?? null);
-      const match = categories.find((c) => c.name.toLowerCase() === String(json.extraction.suggested_category).toLowerCase());
-      setCategoryId(match?.id ?? categories[0]?.id ?? "");
+      // Category matching happens in its own effect below, keyed on
+      // both `result` and `categories` — not here. Doing it here reads
+      // `categories` from this function's own closure, which is still
+      // the empty initial [] if the categories fetch (a separate
+      // effect, below) hasn't resolved yet — a real race whenever
+      // someone picks a photo quickly after opening this screen. The
+      // dropdown would then visually show a category anyway (the
+      // browser falls back to displaying the first <option> when
+      // none matches an empty value), while the real saved state
+      // stayed empty until you touched the dropdown yourself.
     } catch (err) {
       setError(err instanceof Error ? err.message : "Something went wrong reading that photo.");
     } finally {
       setLoading(false);
     }
   }
+
+  useEffect(() => {
+    if (!result || categories.length === 0) return;
+    const match = categories.find((c) => c.name.toLowerCase() === String(result.suggested_category ?? "").toLowerCase());
+    setCategoryId((prev) => prev || match?.id || categories[0]?.id || "");
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [result, categories]);
 
   async function handleSave() {
     if (!result) return;

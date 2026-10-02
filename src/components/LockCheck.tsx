@@ -5,7 +5,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { createClient } from "@/lib/supabase/client";
 import { isUnlocked } from "@/lib/auth/pinLock";
 
-const INACTIVITY_LIMIT_MS = 12 * 60 * 1000;
+const INACTIVITY_LIMIT_MS = 2 * 60 * 1000;
 const ACTIVITY_KEY = "expense-tracker:last-activity";
 
 function markActivity() {
@@ -40,7 +40,7 @@ function msSinceLastActivity(): number {
  * straight past the lock. Supabase is the one source of truth now, on
  * every device, exactly as it should be.
  *
- * 2. Inactivity auto-logout — 12 minutes with no click, keypress,
+ * 2. Inactivity auto-logout — 2 minutes with no click, keypress,
  * touch, or scroll signs the session out entirely (not just back to
  * the PIN lock) on both web and mobile, since this one component runs
  * on every page either way. Activity is tracked in sessionStorage
@@ -48,7 +48,7 @@ function msSinceLastActivity(): number {
  * checked both on a timer and immediately when the tab regains focus
  * — the latter matters because a backgrounded tab's timers get
  * throttled by the browser, so without it a long-backgrounded tab
- * might not actually sign out until well after the 12 minutes are up.
+ * might not actually sign out until well after the 2 minutes are up.
  */
 export function LockCheck() {
   const router = useRouter();
