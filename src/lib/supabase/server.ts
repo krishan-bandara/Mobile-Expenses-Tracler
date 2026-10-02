@@ -9,8 +9,8 @@ type CookieToSet = { name: string; value: string; options: CookieOptions };
  * Server-side Supabase client for Server Components, Route Handlers and
  * Server Actions. Reads the session from cookies via @supabase/ssr.
  */
-export function createClient() {
-  const cookieStore = cookies();
+export async function createClient() {
+  const cookieStore = await cookies();
 
   return createServerClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,

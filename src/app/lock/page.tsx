@@ -7,6 +7,9 @@ import { createClient } from "@/lib/supabase/client";
 import { PinPad } from "@/components/PinPad";
 import {
   verifyPin,
+  lockoutRemainingSeconds,
+  recordFailedAttempt,
+  resetAttempts,
   markUnlocked,
   biometricSupported,
   hasBiometricRegistered,
@@ -25,7 +28,9 @@ export default function LockPage() {
 function LockPageInner() {
   const router = useRouter();
   const params = useSearchParams();
-  const next = params.get("next") || "/";
+  const rawNext = params.get("next") || "/";
+  // Same-origin relative paths only, so ?next= can't bounce the user to another site.
+  const next = rawNext.startsWith("/") && !rawNext.startsWith("//") && !rawNext.includes("\\") ? rawNext : "/";
 
   const [profile, setProfile] = useState<Profile | null>(null);
   const [error, setError] = useState<string | undefined>();
@@ -70,12 +75,20 @@ function LockPageInner() {
 
   async function handlePin(pin: string) {
     if (!profile?.pin_hash || !profile.pin_salt) return;
+    const wait = lockoutRemainingSeconds();
+    if (wait > 0) {
+      setError(`Too many attempts — try again in ${wait}s.`);
+      return;
+    }
     const ok = await verifyPin(pin, profile.pin_salt, profile.pin_hash);
     if (ok) {
+      resetAttempts();
       markUnlocked();
       router.replace(next);
     } else {
-      setError("Wrong PIN — try again.");
+      recordFailedAttempt();
+      const lockedFor = lockoutRemainingSeconds();
+      setError(lockedFor > 0 ? `Too many attempts — try again in ${lockedFor}s.` : "Wrong PIN — try again.");
     }
   }
 

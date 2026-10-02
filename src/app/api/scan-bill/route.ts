@@ -5,6 +5,14 @@ import { extractBillFromImage } from "@/lib/gemini";
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
+const MAX_BYTES = 10 * 1024 * 1024;
+const ALLOWED_TYPES: Record<string, string> = {
+  "image/jpeg": "jpg",
+  "image/png": "png",
+  "image/webp": "webp",
+  "image/heic": "heic"
+};
+
 /**
  * POST multipart/form-data with a single "photo" file field.
  * Uploads the photo to the private 'receipts' bucket, sends it to the
@@ -14,7 +22,7 @@ export const maxDuration = 60;
  * the review screen decides what to keep.
  */
 export async function POST(request: Request) {
-  const supabase = createClient();
+  const supabase = await createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -32,6 +40,14 @@ export async function POST(request: Request) {
   const { data: categories } = await supabase.from("categories").select("name").eq("user_id", user.id);
   const categoryNames = (categories ?? []).map((c) => c.name);
 
+  const ext = ALLOWED_TYPES[file.type];
+  if (!ext) {
+    return NextResponse.json({ error: "Unsupported image type" }, { status: 415 });
+  }
+  if (file.size > MAX_BYTES) {
+    return NextResponse.json({ error: "Image too large (max 10 MB)" }, { status: 413 });
+  }
+
   const arrayBuffer = await file.arrayBuffer();
   const base64 = Buffer.from(arrayBuffer).toString("base64");
 
@@ -39,23 +55,21 @@ export async function POST(request: Request) {
   try {
     extraction = await extractBillFromImage({
       imageBase64: base64,
-      mimeType: file.type || "image/jpeg",
+      mimeType: file.type,
       categoryNames: categoryNames.length ? categoryNames : ["Other"]
     });
   } catch (err) {
-    return NextResponse.json(
-      { error: err instanceof Error ? err.message : "Could not read the bill" },
-      { status: 502 }
-    );
+    console.error("scan-bill extraction failed:", err);
+    return NextResponse.json({ error: "Could not read the bill. Please try again." }, { status: 502 });
   }
 
   // Store the original photo under the user's own folder. The storage
   // RLS policy (auth.uid() = foldername[1]) already lets this signed-in
   // user write here with their own session — no service-role key needed.
-  const receiptPath = `${user.id}/${Date.now()}-${file.name || "receipt.jpg"}`;
+  const receiptPath = `${user.id}/${crypto.randomUUID()}.${ext}`;
   const { error: uploadError } = await supabase.storage
     .from("receipts")
-    .upload(receiptPath, arrayBuffer, { contentType: file.type || "image/jpeg" });
+    .upload(receiptPath, arrayBuffer, { contentType: file.type });
 
   return NextResponse.json({
     extraction,

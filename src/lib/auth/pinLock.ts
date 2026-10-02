@@ -5,7 +5,7 @@
  * Supabase session (it does not replace login) — it just stops someone
  * picking up your unlocked phone from opening the ledger straight away.
  *
- * The PIN is never stored in plain text: we hash it (SHA-256, salted)
+ * The PIN is never stored in plain text: we hash it (PBKDF2-SHA256, salted)
  * client-side and only ever persist the hash+salt, in the `profiles`
  * table so it follows you across devices.
  */
@@ -26,13 +26,78 @@ export function randomSalt(): string {
   return Array.from(bytes).map((b) => b.toString(16).padStart(2, "0")).join("");
 }
 
-export async function hashPin(pin: string, salt: string): Promise<string> {
-  return sha256Hex(`${salt}:${pin}`);
+const PBKDF2_PREFIX = "pbkdf2$";
+const PBKDF2_ITERATIONS = 310_000;
+
+async function pbkdf2Hex(pin: string, salt: string, iterations: number): Promise<string> {
+  const enc = new TextEncoder();
+  const key = await crypto.subtle.importKey("raw", enc.encode(pin), "PBKDF2", false, ["deriveBits"]);
+  const bits = await crypto.subtle.deriveBits(
+    { name: "PBKDF2", hash: "SHA-256", salt: enc.encode(salt), iterations },
+    key,
+    256
+  );
+  return Array.from(new Uint8Array(bits))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
 }
 
+export async function hashPin(pin: string, salt: string): Promise<string> {
+  return `${PBKDF2_PREFIX}${PBKDF2_ITERATIONS}$${await pbkdf2Hex(pin, salt, PBKDF2_ITERATIONS)}`;
+}
+
+function constantTimeEqual(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  let diff = 0;
+  for (let i = 0; i < a.length; i++) diff |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  return diff === 0;
+}
+
+/** Accepts both the new PBKDF2 format and legacy salted SHA-256 hashes. */
 export async function verifyPin(pin: string, salt: string, expectedHash: string): Promise<boolean> {
-  const candidate = await hashPin(pin, salt);
-  return candidate === expectedHash;
+  if (expectedHash.startsWith(PBKDF2_PREFIX)) {
+    const [, iterations, hex] = expectedHash.split("$");
+    const iters = Number(iterations);
+    if (!Number.isInteger(iters) || iters < 1 || !hex) return false;
+    return constantTimeEqual(await pbkdf2Hex(pin, salt, iters), hex);
+  }
+  return constantTimeEqual(await sha256Hex(`${salt}:${pin}`), expectedHash);
+}
+
+const ATTEMPTS_KEY = "expense-tracker:pin-attempts";
+const MAX_ATTEMPTS = 5;
+const LOCKOUT_MS = 30_000;
+
+/** Seconds remaining on the lockout, or 0 if the PIN pad is usable. */
+export function lockoutRemainingSeconds(): number {
+  try {
+    const raw = localStorage.getItem(ATTEMPTS_KEY);
+    if (!raw) return 0;
+    const { count, last } = JSON.parse(raw) as { count: number; last: number };
+    if (count < MAX_ATTEMPTS) return 0;
+    const remaining = LOCKOUT_MS * 2 ** Math.min(count - MAX_ATTEMPTS, 6) - (Date.now() - last);
+    return remaining > 0 ? Math.ceil(remaining / 1000) : 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function recordFailedAttempt() {
+  try {
+    const raw = localStorage.getItem(ATTEMPTS_KEY);
+    const count = raw ? (JSON.parse(raw) as { count: number }).count : 0;
+    localStorage.setItem(ATTEMPTS_KEY, JSON.stringify({ count: count + 1, last: Date.now() }));
+  } catch {
+    // storage unavailable — lockout is best-effort
+  }
+}
+
+export function resetAttempts() {
+  try {
+    localStorage.removeItem(ATTEMPTS_KEY);
+  } catch {
+    // ignore
+  }
 }
 
 export function markUnlocked() {

@@ -1,0 +1,30 @@
+name: zap-baseline
+
+# Manual passive scan of a deployed (staging) instance. Only point this at
+# systems you own; the baseline scan is passive but still sends requests.
+on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: "Staging URL to scan (https://...)"
+        required: true
+
+permissions:
+  contents: read
+
+jobs:
+  zap:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Run ZAP baseline
+        env:
+          TARGET: ${{ inputs.target }}
+        run: |
+          mkdir -p zap-out && chmod 777 zap-out
+          docker run --rm -v "$PWD/zap-out:/zap/wrk:rw" ghcr.io/zaproxy/zaproxy:stable \
+            zap-baseline.py -t "$TARGET" -r report.html -I
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
+        if: always()
+        with:
+          name: zap-report
+          path: zap-out/report.html
