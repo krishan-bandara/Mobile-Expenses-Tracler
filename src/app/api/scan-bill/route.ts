@@ -1,28 +1,30 @@
 import { NextResponse } from "next/server";
 import { createClient } from "@/lib/supabase/server";
 import { extractBillFromImage } from "@/lib/gemini";
+import { sidecarPathFor } from "@/lib/scanPending";
 
 export const runtime = "nodejs";
 export const maxDuration = 60;
 
-const MAX_BYTES = 10 * 1024 * 1024;
-const ALLOWED_TYPES: Record<string, string> = {
-  "image/jpeg": "jpg",
-  "image/png": "png",
-  "image/webp": "webp",
-  "image/heic": "heic"
-};
-
 /**
- * POST multipart/form-data with a single "photo" file field.
- * Uploads the photo to the private 'receipts' bucket, sends it to the
- * vision model for extraction, and returns the structured result plus
- * the storage path so the client can attach it to the transaction it
- * eventually saves. Nothing is written to the transactions table here —
- * the review screen decides what to keep.
+ * POST { receiptPath } — JSON, not a file upload.
+ *
+ * The browser has already uploaded the (compressed) photo straight to
+ * the private 'receipts' bucket before calling this, so this request is
+ * tiny and the photo is safe in storage no matter what happens next.
+ * This route reads that photo back, sends it to the vision model, and
+ * returns the structured result for the review screen. Nothing is
+ * written to the transactions table here — the review screen decides
+ * what to keep.
+ *
+ * The finished extraction is also saved next to the photo as a small
+ * .json file. If the phone locks mid-read and the connection drops,
+ * the server carries on regardless; when the user comes back, the
+ * result is already sitting there and gets returned instantly instead
+ * of paying for a second model call.
  */
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -31,48 +33,64 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Not signed in" }, { status: 401 });
   }
 
-  const formData = await request.formData();
-  const file = formData.get("photo");
-  if (!(file instanceof File)) {
-    return NextResponse.json({ error: "Missing 'photo' file" }, { status: 400 });
+  let receiptPath: unknown;
+  try {
+    ({ receiptPath } = await request.json());
+  } catch {
+    return NextResponse.json({ error: "Expected JSON with a receiptPath" }, { status: 400 });
+  }
+
+  // Only ever read from this user's own folder. Storage RLS would block
+  // anything else anyway; checking here too gives a clear error.
+  if (typeof receiptPath !== "string" || !receiptPath.startsWith(`${user.id}/`) || receiptPath.includes("..")) {
+    return NextResponse.json({ error: "Invalid receiptPath" }, { status: 400 });
+  }
+
+  const sidecarPath = sidecarPathFor(receiptPath);
+
+  // Already read (e.g. while the client's connection was down)?
+  const cached = await supabase.storage.from("receipts").download(sidecarPath);
+  if (!cached.error && cached.data) {
+    try {
+      const extraction = JSON.parse(await cached.data.text());
+      return NextResponse.json({ extraction, receiptPath, cached: true });
+    } catch {
+      // Unreadable sidecar — fall through and read the photo again.
+    }
+  }
+
+  const photo = await supabase.storage.from("receipts").download(receiptPath);
+  if (photo.error || !photo.data) {
+    return NextResponse.json({ error: "Couldn't find that photo — please take or choose it again." }, { status: 404 });
   }
 
   const { data: categories } = await supabase.from("categories").select("name").eq("user_id", user.id);
   const categoryNames = (categories ?? []).map((c) => c.name);
 
-  const ext = ALLOWED_TYPES[file.type];
-  if (!ext) {
-    return NextResponse.json({ error: "Unsupported image type" }, { status: 415 });
-  }
-  if (file.size > MAX_BYTES) {
-    return NextResponse.json({ error: "Image too large (max 10 MB)" }, { status: 413 });
-  }
-
-  const arrayBuffer = await file.arrayBuffer();
-  const base64 = Buffer.from(arrayBuffer).toString("base64");
+  const base64 = Buffer.from(await photo.data.arrayBuffer()).toString("base64");
 
   let extraction;
   try {
     extraction = await extractBillFromImage({
       imageBase64: base64,
-      mimeType: file.type,
+      mimeType: photo.data.type || "image/jpeg",
       categoryNames: categoryNames.length ? categoryNames : ["Other"]
     });
   } catch (err) {
-    console.error("scan-bill extraction failed:", err);
-    return NextResponse.json({ error: "Could not read the bill. Please try again." }, { status: 502 });
+    return NextResponse.json(
+      { error: err instanceof Error ? err.message : "Could not read the bill" },
+      { status: 502 }
+    );
   }
 
-  // Store the original photo under the user's own folder. The storage
-  // RLS policy (auth.uid() = foldername[1]) already lets this signed-in
-  // user write here with their own session — no service-role key needed.
-  const receiptPath = `${user.id}/${crypto.randomUUID()}.${ext}`;
-  const { error: uploadError } = await supabase.storage
-    .from("receipts")
-    .upload(receiptPath, arrayBuffer, { contentType: file.type });
+  // Best effort — if this fails the only cost is a re-read on resume.
+  try {
+    await supabase.storage
+      .from("receipts")
+      .upload(sidecarPath, JSON.stringify(extraction), { contentType: "application/json" });
+  } catch {
+    // ignore
+  }
 
-  return NextResponse.json({
-    extraction,
-    receiptPath: uploadError ? null : receiptPath
-  });
+  return NextResponse.json({ extraction, receiptPath });
 }

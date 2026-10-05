@@ -10,7 +10,7 @@ import { monthStartISO, localDateISO } from "@/lib/utils";
  * stops nagging you for the rest of the month.
  */
 export async function GET() {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -31,7 +31,7 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const supabase = await createClient();
+  const supabase = createClient();
   const {
     data: { user }
   } = await supabase.auth.getUser();
@@ -50,24 +50,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ ok: true });
   }
 
-  const { data: template } = await supabase
-    .from("recurring_templates")
-    .select("*")
-    .eq("id", body.templateId)
-    .eq("user_id", user.id)
-    .single();
+  const { data: template } = await supabase.from("recurring_templates").select("*").eq("id", body.templateId).single();
   if (!template) return NextResponse.json({ error: "Template not found" }, { status: 404 });
-
-  // Template FKs must point at this user's own account/category.
-  const [{ data: acct }, { data: cat }] = await Promise.all([
-    template.account_id
-      ? supabase.from("accounts").select("id").eq("id", template.account_id).eq("user_id", user.id).maybeSingle()
-      : Promise.resolve({ data: { id: null } }),
-    template.category_id
-      ? supabase.from("categories").select("id").eq("id", template.category_id).eq("user_id", user.id).maybeSingle()
-      : Promise.resolve({ data: { id: null } })
-  ]);
-  if (!acct || !cat) return NextResponse.json({ error: "Invalid account or category" }, { status: 400 });
 
   const { data: transaction, error: txnError } = await supabase
     .from("transactions")
