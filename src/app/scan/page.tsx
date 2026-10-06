@@ -125,6 +125,12 @@ export default function ScanBillPage() {
   }
 
   async function handleFile(file: File) {
+    const looksLikeImage = file.type.startsWith("image/") || /\.(jpe?g|png|webp|heic|heif)$/i.test(file.name);
+    if (!looksLikeImage) {
+      setError("That file isn't a photo. Please choose a picture of the receipt (JPG, PNG or WebP) — PDFs aren't supported yet.");
+      setPhase("failed");
+      return;
+    }
     setError(null);
     setResult(null);
     setResumed(false);
@@ -250,10 +256,16 @@ export default function ScanBillPage() {
           if (file) void handleFile(file);
         }}
       />
+      {/* Plain accept="image/*" was opening the camera app directly on
+          the user's Samsung phone — Chrome adds its own camera/photo
+          shortcuts whenever *every* accepted type is an image. Listing
+          one non-image type (PDF, rejected below) makes Android use its
+          standard file browser instead, which has an "Images" section
+          covering the whole gallery and can't launch the camera. */}
       <input
         ref={galleryInputRef}
         type="file"
-        accept="image/*"
+        accept="image/*,application/pdf"
         className="hidden"
         onChange={(e) => {
           const file = e.target.files?.[0];
